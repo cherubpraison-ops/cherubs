@@ -1,6 +1,6 @@
 {
   "name": "Cherub's OS",
-  "short_name": "Cherub",
+  "short_name": "Cherub’s OS",
   "description": "Clients, sessions, payments, notes and reminders — private to you.",
   "start_url": "./",
   "scope": "./",
