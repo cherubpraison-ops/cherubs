@@ -319,6 +319,7 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .reg .tot .cn{background:var(--panel2)}
 .sc{width:22px;height:22px;border-radius:6px;display:inline-grid;place-items:center;font-weight:700;cursor:pointer;font-size:12px}
 .sc.s-done{background:var(--ok);color:#fbf3e7}.sc.s-skip{background:rgba(201,71,58,.15);color:var(--danger)}.sc.s-moved{background:var(--soft);color:var(--accent)}
+.sc.s-add{color:var(--line);font-weight:400}.sc.s-add:hover{color:var(--accent);background:var(--soft)}
 .sc.s-late{border:1.5px solid var(--warn);color:var(--warn)}.sc.s-plan{color:var(--muted)}
 
 .mic-fab{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:15;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--onacc);box-shadow:0 6px 18px rgba(60,35,15,.3);border:2px solid var(--solid)}
@@ -663,7 +664,7 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
  const cs=sortClients(all('client').filter(c=>c.active!==false||all('session').some(s=>s.clientId===c.id&&(s.date||'').startsWith(ym))));
  const days=[];for(let i=1;i<=n;i++)days.push(ym+'-'+pad(i));
  const M=earnStats(ym+'-01',end,true);
- const rows=cs.map(c=>{let dn=0,cx=0;const cells=days.map(d=>{const xs=sessionsOn(d,c.id);if(!xs.length)return`<td class="${d===t?'tc':''}"></td>`;const x=xs[0],st=stOf(x);
+ const r_id=x=>x;const rows=cs.map(c=>{let dn=0,cx=0;const cells=days.map(d=>{const xs=sessionsOn(d,c.id);if(!xs.length)return`<td class="${d===t?'tc':''}">${d<=t?`<span class="sc s-add" data-act="sMore" data-sid="r_${r_id(c.id)}_${d}" data-c="${c.id}" data-d="${d}" title="Add a session">+</span>`:''}</td>`;const x=xs[0],st=stOf(x);
    if(st==='done')dn++;if(st==='skip')cx++;
    const sym=st==='done'?'✓':st==='skip'?'✕':st==='moved'?'↻':d<t?'?':'·';
    return`<td class="${d===t?'tc':''}"><span class="sc s-${st==='pending'?(d<t?'late':'plan'):st}" data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}">${sym}</span></td>`}).join('');
@@ -674,7 +675,7 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
  ${cs.length?`<div class="card sheetwrap"><table class="reg"><thead><tr><th class="cn">Client</th>${days.map(d=>`<th class="${d===t?'tc':''}"><span>${'SMTWTFS'[parseD(d).getDay()]}</span>${+d.slice(8)}</th>`).join('')}<th>Done</th><th>Canc.</th><th>Earned</th><th>Paid</th><th>Unpaid</th></tr></thead>
  <tbody>${rows.map(r=>`<tr><td class="cn"><button data-act="openClient" data-id="${r.c.id}"><i style="background:${esc(r.c.color||COLORS[0])}"></i>${esc(r.c.name)}</button></td>${r.cells}<td class="nm">${r.dn}</td><td class="nm">${r.cx}</td><td class="nm">${money(r.earned)}</td><td class="nm grn">${money(r.paid)}</td><td class="nm ${r.unpaid?'red':''}">${money(r.unpaid)}</td></tr>`).join('')}
  <tr class="tot"><td class="cn">Total</td>${days.map(()=>'<td></td>').join('')}<td class="nm">${rows.reduce((a,r)=>a+r.dn,0)}</td><td class="nm">${rows.reduce((a,r)=>a+r.cx,0)}</td><td class="nm">${money(rows.reduce((a,r)=>a+r.earned,0))}</td><td class="nm grn">${money(rows.reduce((a,r)=>a+r.paid,0))}</td><td class="nm red">${money(rows.reduce((a,r)=>a+r.unpaid,0))}</td></tr></tbody></table></div>
- <div class="muted sm" style="margin:10px 4px">✓ visited · ✕ cancelled · ↻ rescheduled · ? not marked · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
+ <div class="muted sm" style="margin:10px 4px">✓ visited · ✕ cancelled · ↻ rescheduled · ? not marked · + add a session on any day · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
  <button class="btn" data-act="copySheet">Copy sheet (paste into Excel / Google Sheets)</button>`
  :emptyBig('📋','No clients yet','Add clients and their visits will fill this register.')}`};
 VIEWS.prefs=()=>{
@@ -808,7 +809,7 @@ function blockInput(el){const pg=curPage();if(!pg)return;const b=pg.blocks.find(
 
 // ---------- clients & sessions ----------
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-function scheduledOn(c,d){if(c.active===false)return false;if(c.start&&d<c.start)return false;
+function scheduledOn(c,d){if(c.active===false||c.sched==='flex')return false;if(c.start&&d<c.start)return false;
  if(c.sched==='alt'){const base=c.altStart||c.start;if(!base)return false;const diff=Math.round((parseD(d)-parseD(base))/864e5);return diff>=0&&diff%2===0}
  return(c.days||[]).map(Number).includes(parseD(d).getDay())}
 function sessionsOn(d,cid){return memo('so:'+d+':'+(cid||''),()=>{const out=[],seen=new Set();
@@ -829,7 +830,7 @@ function clientMoney(c){return memo('cm:'+c.id,()=>{const done=all('session').fi
  else due=allBills(c.id).filter(b=>!b.paid).reduce((a,b)=>a+b.amount,0)-loose;
  return{done,paid,due:Math.round(due*100)/100,remaining}})}
 function payLabel(c,m){if(c.pay==='monthly')return money(c.fee)+'/month';if(c.pay==='package'){const r=m.remaining;return r>0?r+' session'+(r===1?'':'s')+' left':r===0?'Package used up':(-r)+' over package'}return money(c.rate)+'/session'}
-function schedText(c){if(c.sched==='alt')return'Alternate days';const d=(c.days||[]).map(Number);if(d.length===7)return'Every day';if(d.length===6&&!d.includes(0))return'Mon–Sat';if(d.length===5&&!d.includes(0)&&!d.includes(6))return'Mon–Fri';return[1,2,3,4,5,6,0].filter(i=>d.includes(i)).map(i=>DOW[i]).join(', ')||'No days set'}
+function schedText(c){if(c.sched==='flex')return'Flexible days';if(c.sched==='alt')return'Alternate days';const d=(c.days||[]).map(Number);if(d.length===7)return'Every day';if(d.length===6&&!d.includes(0))return'Mon–Sat';if(d.length===5&&!d.includes(0)&&!d.includes(6))return'Mon–Fri';return[1,2,3,4,5,6,0].filter(i=>d.includes(i)).map(i=>DOW[i]).join(', ')||'No days set'}
 const av=(c,lg)=>`<span class="av ${lg?'lg':''}" style="background:${esc(c.color||COLORS[0])}" data-act="openClient" data-id="${c.id}">${esc(String(c.name||'?').trim()[0]||'?').toUpperCase()}</span>`;
 function sessActions(x){const st=stOf(x),a=`data-sid="${esc(x.id)}" data-c="${x.c.id}" data-d="${x.date}"`;
  return st==='pending'?`<div class="sact"><button class="btn sm okb" data-act="sDone" ${a}>${ic('check')}Visited</button><button class="btn sm nob" data-act="sSkip" ${a}>✕ Cancelled</button>${x.c.pay==='monthly'?`<button class="btn sm" data-act="sPost" ${a}>↻ Reschedule</button>`:''}</div>`
@@ -896,7 +897,7 @@ function clientBox(c){const t=today(),m=clientMoney(c),ts=sessionsOn(t,c.id),um=
  const line=(x,lab)=>`<div class="tl"><span class="tl-q">${lab}${x.s&&x.s.from?' <span class="muted sm">(moved from '+dueLabel(x.s.from)+')</span>':''}</span>${sessActions(x)}</div>`;
  return`<section class="card cbox" style="--cc:${esc(c.color||COLORS[0])}"><div class="cbox-h">${av(c,1)}<div class="grow" data-act="openClient" data-id="${c.id}" style="cursor:pointer"><div class="cbox-n">${esc(c.name)}</div><div class="row-m"><span>${schedText(c)}</span><span>${esc(payLabel(c,m))}</span></div></div>
  <div class="cbox-due">${m.due>0?`<b>${money(m.due)}</b><span>due</span>`:m.due<0?`<b style="color:var(--ok)">+${money(-m.due)}</b><span>advance</span>`:'<span class="settled">Settled</span>'}</div></div>
- ${ts.length?ts.map(x=>line(x,'Did you visit today?')).join(''):`<div class="tl"><span class="muted sm">No session today${next?' · next on '+dueLabel(next):''}</span></div>`}
+ ${ts.length?ts.map(x=>line(x,'Did you visit today?')).join(''):`<div class="tl"><span class="muted sm">No session scheduled today${next?' · next on '+dueLabel(next):''}</span><button class="btn sm" style="align-self:flex-start" data-act="sMore" data-sid="r_${c.id}_${t}" data-c="${c.id}" data-d="${t}">＋ Had a session today</button></div>`}
  ${um.map(x=>line(x,'<span style="color:var(--warn)">'+dueLabel(x.date)+' — did it happen?</span>')).join('')}
  ${weekStrip(c)}
  <div class="cbox-f"><span>This week <b>${wkDone} session${wkDone===1?'':'s'}${perS?' · '+money(wkDone*(Number(c.rate)||0)):''}</b></span>${ub.length?`<span class="due">${ub.length} unpaid bill${ub.length===1?'':'s'}</span>`:''}</div></section>`}
@@ -975,7 +976,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
 function editClient(c={}){const isNew=!c.id;
  const v={sched:'days',days:[1,2,3,4,5,6],pay:'session',start:today(),altStart:today(),color:COLORS[all('client').length%COLORS.length],...c};
  const fields=[{k:'name',label:'Client name',req:1},{k:'phone',label:'Phone (optional)',type:'tel'},
-  {k:'sched',label:'Sessions happen on',type:'radio',options:['days','alt'],labels:{days:'Specific days',alt:'Alternate days'}},
+  {k:'sched',label:'Sessions happen on',type:'radio',options:['days','alt','flex'],labels:{days:'Specific days',alt:'Alternate days',flex:'Flexible (I mark them)'}},
   {k:'days',label:'Which days',type:'days',when:{k:'sched',v:'days'}},
   {k:'altStart',label:'A session day (alternate days count from here)',type:'date',when:{k:'sched',v:'alt'}},
   {k:'pay',label:'How they pay',type:'radio',options:['session','monthly','package'],labels:{session:'Per session',monthly:'Monthly fee',package:'Prepaid package'}},
