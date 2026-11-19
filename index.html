@@ -440,7 +440,7 @@ async function bulk(items,del){
  if(Store.mode==='local')saveLocal();render();
 }
 const FB={apiKey:"AIzaSyA-wcFxUbduNHkxC2T63uk17_0fk4NLCzA",authDomain:"cherubs-61a33.firebaseapp.com",projectId:"cherubs-61a33",storageBucket:"cherubs-61a33.firebasestorage.app",messagingSenderId:"177104720359",appId:"1:177104720359:web:ee06a1e2281c7487f56d42"};
-const VAPID='';
+const VAPID='BC9mVN07KrREPzMmbNO4gT1O6sItL00Q8twbesGnVVuqoOakO4OCDPpTYXCDagjPr_0jdk9waRaoqWU_2bsh8Mo';
 Store.col=()=>Store.db.collection('users').doc(Store.uid).collection('items');
 let _unsub=null;
 async function init(){
