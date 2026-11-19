@@ -1,0 +1,24 @@
+name: Keep schedule alive
+
+# GitHub pauses scheduled jobs in repositories with no activity for 60 days.
+# This makes one tiny commit a month so the notifications never stop.
+on:
+  schedule:
+    - cron: '17 3 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git config user.name "cherub-bot"
+          git config user.email "cherub-bot@users.noreply.github.com"
+          git add .keepalive
+          git commit -m "Keep notifications schedule alive" || exit 0
+          git push
