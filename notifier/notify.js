@@ -96,6 +96,18 @@ async function runForUser(userRef) {
   // Clean old reminder markers.
   for (const k of Object.keys(sent)) if (!items.some(i => i.id === k && i.kind === 'reminder' && !i.done)) { delete sent[k]; changed = true; }
 
+  // Birthdays: a notification at 9 am on the day.
+  if (t.hm >= '09:00' && meta.lastBday !== t.date) {
+    meta.lastBday = t.date; changed = true;
+    const y = +t.date.slice(0, 4), leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    for (const c of items) {
+      if (c.kind !== 'client' || c.active === false || !c.dob) continue;
+      let md = c.dob.slice(5, 10); if (md === '02-29' && !leap) md = '02-28';
+      if (md !== t.date.slice(5, 10)) continue;
+      const age = y - +c.dob.slice(0, 4);
+      msgs.push(['🎂 Birthday today', names ? `${c.name} turns ${age} today — send your wishes!` : `One of your clients has a birthday today (turns ${age}). Tap to see who.`]);
+    }
+  }
   if (t.hm >= checkin) {
     if (meta.lastCheckin !== t.date) {
       meta.lastCheckin = t.date; changed = true;

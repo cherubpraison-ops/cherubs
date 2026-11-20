@@ -341,6 +341,9 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .aerr{color:var(--danger);font-size:14px;min-height:18px}
 .sinl{display:flex;justify-content:space-between;margin-top:14px;font-size:14px}
 .sinl button{color:var(--accent);font-weight:600}
+.bday{padding:6px 16px;margin-bottom:14px;border-left:5px solid var(--gold)}
+.bdr{display:flex;gap:12px;align-items:center;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--line)}.bdr:last-child{border-bottom:0}
+.bde{font-size:26px}
 @media(max-width:900px){.cal-wrap,.money-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){
  .side{display:none}
@@ -549,6 +552,7 @@ VIEWS.home=()=>{const p=prefs(),t=today(),h=new Date().getHours(),greet=h<5?'Goo
  const mName=parseD(t).toLocaleDateString('en-IN',{month:'long'});
  const reorder=ui.reorder&&cs.length>1;
  return`<div class="mbrand"><span class="wordmark">Cherub’s<small>OS</small></span><button class="icon-btn" data-act="themeToggle" aria-label="Day / night">${ic(document.documentElement.dataset.theme==='night'?'sun':'moon')}</button></div><header class="top"><div><div class="eyebrow">${fmtLongDate(t)}</div><h1 class="hello">${greet}, ${esc(p.name||'Cherub')}</h1>${live||done?`<div class="today-pill">Today · ${done}/${live} sessions done</div>`:''}</div><div style="display:flex;gap:8px"><button class="icon-btn lg dsk" data-act="themeToggle" title="Day / night" aria-label="Day / night">${ic(document.documentElement.dataset.theme==='night'?'sun':'moon')}</button><button class="icon-btn lg" data-act="checkin" title="Check in now" aria-label="Check in now">${ic('bell')}</button><button class="icon-btn lg" data-act="search" aria-label="Search">${ic('search')}</button></div></header>
+ ${(()=>{const bt=birthdaysOn(t),bm=birthdaysOn(addDays(t,1));if(!bt.length&&!bm.length)return'';return`<section class="card bday">${bt.map(c=>`<div class="bdr" data-act="openClient" data-id="${c.id}"><span class="bde">🎂</span><div class="grow"><b>${esc(c.name)}’s birthday today</b><div class="muted sm">Turns ${ageOf(c.dob)} · don’t forget to wish them</div></div></div>`).join('')}${bm.map(c=>`<div class="bdr" data-act="openClient" data-id="${c.id}"><span class="bde">🎁</span><div class="grow"><b>${esc(c.name)}’s birthday is tomorrow</b><div class="muted sm">Turns ${ageOf(c.dob,addDays(t,1))}</div></div></div>`).join('')}</section>`})()}
  <div class="earn"><section class="card ecard"><div class="eyebrow">This week · ${fmtRange(mon,sun)}</div><div class="big">${money(W.amt)}</div><div><b>${W.n}</b> <span class="muted">session${W.n===1?'':'s'} done</span></div><div class="sub"><span>Received <b class="grn">${money(W.rec)}</b></span><span>Unpaid bills <b class="${ubAmt?'red':''}">${money(ubAmt)}</b></span></div></section>
  <section class="card ecard"><div class="eyebrow">${mName}</div><div class="big">${money(M.amt)}</div><div><b>${M.n}</b> <span class="muted">session${M.n===1?'':'s'} done</span></div><div class="sub"><span>Received <b class="grn">${money(M.rec)}</b></span>${(()=>{const u=allBills().filter(b=>!b.paid&&b.from.slice(0,7)===ym).reduce((x,b)=>x+b.amount,0);return`<span>Unpaid <b class="${u?'red':''}">${money(u)}</b></span>`})()}</div></section></div>
  ${cs.length?`<section class="card etable"><div class="er h"><span>Client</span><span>This week</span><span>${mName.slice(0,3)}</span><span class="r">Due</span></div>${cs.map(c=>{const w=W.per[c.id]||{n:0,a:0},m=M.per[c.id]||{n:0,a:0},due=clientMoney(c).due;
@@ -824,6 +828,10 @@ function unmarked(cid){const t=today(),res=[];for(let i=1;i<=30;i++){const d=add
 function monthsBetween(a,b){const x=parseD(a),y=b?parseD(b):new Date();return Math.max(0,(y.getFullYear()-x.getFullYear())*12+y.getMonth()-x.getMonth()+1)}
 const pDate=p=>p.forDate||p.date||'';
 const collected=ym=>all('payment').filter(p=>pDate(p).startsWith(ym)).reduce((a,p)=>a+(Number(p.amount)||0),0);
+function ageOf(dob,on){if(!dob)return null;const a=parseD(dob),b=parseD(on||today());let y=b.getFullYear()-a.getFullYear();if(b.getMonth()<a.getMonth()||(b.getMonth()===a.getMonth()&&b.getDate()<a.getDate()))y--;return y}
+function bdayMatch(dob,d){if(!dob)return false;let md=dob.slice(5,10);const y=+d.slice(0,4);if(md==='02-29'&&!((y%4===0&&y%100!==0)||y%400===0))md='02-28';return d.slice(5,10)===md}
+const birthdaysOn=d=>sortClients(all('client').filter(c=>c.active!==false&&bdayMatch(c.dob,d)));
+const fmtDob=d=>parseD(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
 function clientMoney(c){return memo('cm:'+c.id,()=>{const done=all('session').filter(s=>s.clientId===c.id&&s.status==='done').length,ps=all('payment').filter(p=>p.clientId===c.id);
  const paid=ps.reduce((a,p)=>a+(Number(p.amount)||0),0),loose=ps.filter(p=>!p.billId&&!p.pkg).reduce((a,p)=>a+(Number(p.amount)||0),0);let due=0,remaining=null;
  if(c.pay==='package'){const n=Number(c.pkgSessions)||0,pr=Number(c.pkgPrice)||0,bought=ps.filter(p=>p.pkg).length;remaining=bought*n-done;due=bought*pr+(remaining<0&&n?(-remaining)*pr/n:0)-ps.filter(p=>p.pkg||!p.billId).reduce((a,p)=>a+(Number(p.amount)||0),0)}
@@ -963,7 +971,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
  const next=[];for(let i=1;i<=21&&next.length<5;i++){const d=addDays(t,i);sessionsOn(d,c.id).forEach(x=>{if(stOf(x)==='pending')next.push(x)})}
  const pays=all('payment').filter(p=>p.clientId===c.id).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(b.created||0)-(a.created||0));
  const third=c.pay==='package'?['Sessions left',m.remaining]:c.pay==='monthly'?['Monthly fee',money(c.fee)]:['Per session',money(c.rate)];
- return`<header class="top"><div style="display:flex;gap:12px;align-items:center;min-width:0"><button class="icon-btn lg" data-act="clientsBack" aria-label="Back">${ic('back')}</button>${av(c,1)}<div style="min-width:0"><div class="eyebrow">${schedText(c)}${c.active===false?' · Paused':''}</div><h1 class="ell">${esc(c.name)}</h1></div></div><button class="btn" data-act="editClient" data-id="${c.id}">Edit</button></header>
+ return`<header class="top"><div style="display:flex;gap:12px;align-items:center;min-width:0"><button class="icon-btn lg" data-act="clientsBack" aria-label="Back">${ic('back')}</button>${av(c,1)}<div style="min-width:0"><div class="eyebrow">${schedText(c)}${c.active===false?' · Paused':''}${c.dob?` · 🎂 ${fmtDob(c.dob)} · Age ${ageOf(c.dob)}`:''}</div><h1 class="ell">${esc(c.name)}</h1></div></div><button class="btn" data-act="editClient" data-id="${c.id}">Edit</button></header>
  <div class="stats"><div class="card stat"><div class="l">This month</div><div class="v">${mDone}<span class="muted sm" style="font-weight:500"> / ${mSched} done</span></div></div>
  <div class="card stat"><div class="l">${m.due<0?'Advance':'Due'}</div><div class="v" style="color:${m.due>0?'var(--danger)':'var(--ok)'}">${money(Math.abs(m.due))}</div></div>
  <div class="card stat"><div class="l">Total paid</div><div class="v">${money(m.paid)}</div></div><div class="card stat"><div class="l">${third[0]}</div><div class="v">${third[1]}</div></div></div>
@@ -975,7 +983,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
  ${c.notes?`<div class="group-h" style="margin-top:14px">Notes</div><div class="sm" style="white-space:pre-wrap">${esc(c.notes)}</div>`:''}</section></div>`}
 function editClient(c={}){const isNew=!c.id;
  const v={sched:'days',days:[1,2,3,4,5,6],pay:'session',start:today(),altStart:today(),color:COLORS[all('client').length%COLORS.length],...c};
- const fields=[{k:'name',label:'Client name',req:1},{k:'phone',label:'Phone (optional)',type:'tel'},
+ const fields=[{k:'name',label:'Client name',req:1},{k:'phone',label:'Phone (optional)',type:'tel',half:1},{k:'dob',label:'Date of birth (private)',type:'date',half:1},
   {k:'sched',label:'Sessions happen on',type:'radio',options:['days','alt','flex'],labels:{days:'Specific days',alt:'Alternate days',flex:'Flexible (I mark them)'}},
   {k:'days',label:'Which days',type:'days',when:{k:'sched',v:'days'}},
   {k:'altStart',label:'A session day (alternate days count from here)',type:'date',when:{k:'sched',v:'alt'}},
