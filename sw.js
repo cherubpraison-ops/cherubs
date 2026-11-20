@@ -13,7 +13,7 @@ firebase.initializeApp({
 // Notifications sent with a "notification" payload are shown automatically.
 firebase.messaging();
 
-const CACHE = 'cherub-v4';
+const CACHE = 'cherub-v5';
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
   FB + 'firebase-app-compat.js', FB + 'firebase-auth-compat.js', FB + 'firebase-firestore-compat.js', FB + 'firebase-messaging-compat.js'];
