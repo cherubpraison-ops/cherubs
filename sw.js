@@ -10,10 +10,24 @@ firebase.initializeApp({
   messagingSenderId: "177104720359",
   appId: "1:177104720359:web:ee06a1e2281c7487f56d42"
 });
+// Action buttons on notifications (Visited / Cancelled). Registered before Firebase's handler.
+self.addEventListener('notificationclick', e => {
+  if (e.action !== 'done' && e.action !== 'skip') return;
+  e.stopImmediatePropagation();
+  e.notification.close();
+  const n = e.notification.data || {}, d = (n.FCM_MSG && n.FCM_MSG.data) || n;
+  const msg = { cherubDo: e.action, sid: d.sid, c: d.c, d: d.d };
+  const url = './?do=' + e.action + '&sid=' + encodeURIComponent(d.sid || '') + '&c=' + encodeURIComponent(d.c || '') + '&d=' + encodeURIComponent(d.d || '');
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const w = list[0];
+    if (w) { w.postMessage(msg); return w.focus ? w.focus() : null; }
+    return self.clients.openWindow(url);
+  }));
+});
 // Notifications sent with a "notification" payload are shown automatically.
 firebase.messaging();
 
-const CACHE = 'cherub-v6';
+const CACHE = 'cherub-v7';
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
   FB + 'firebase-app-compat.js', FB + 'firebase-auth-compat.js', FB + 'firebase-firestore-compat.js', FB + 'firebase-messaging-compat.js'];
@@ -44,6 +58,8 @@ self.addEventListener('fetch', e => {
   }));
 });
 self.addEventListener('notificationclick', e => {
+  const nd = e.notification.data || {};
+  if (nd.FCM_MSG) return; // Firebase opens the link for pushed notifications
   e.notification.close();
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     for (const c of list) { if ('focus' in c) return c.focus(); }

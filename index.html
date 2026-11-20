@@ -478,7 +478,7 @@ function subscribe(){
   for(const id of Store.pending){const cur=Store.items.get(id);if(cur)m.set(id,cur);else m.delete(id)}
   Store.items=m;
   if(!snap.metadata.fromCache){clearTimeout(t);Store.note=''}
-  if(first){first=false;Store.ready=true;render()}else safeRender();
+  if(first){first=false;Store.ready=true;render();runPendingDo()}else safeRender();
  },err=>{clearTimeout(t);Store.ready=true;Store.note='Sync stopped. Close and reopen Cherub to reconnect.';render()});
 }
 const isTyping=()=>{const a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)};
@@ -493,6 +493,9 @@ document.addEventListener('focusout',()=>setTimeout(flush,0));
 const ROUTES=['home','clients','sheet','tasks','notes','pages','reminders','calendar','money','prefs'];
 const ui={route:'home',clientId:null,noteId:null,pageId:null,noteFolder:'All',noteQ:'',taskFilter:'today',calMonth:today().slice(0,7),calDay:today(),moneyMonth:today().slice(0,7),iconPick:false,showDone:false};
 let after=null;
+(function(){try{const q=new URLSearchParams(location.search);if(q.get('do')){ui.pendingDo={cherubDo:q.get('do'),sid:q.get('sid'),c:q.get('c'),d:q.get('d')};history.replaceState(null,'',location.pathname+'#home')}}catch(e){}})();
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',ev=>{const m=ev.data||{};if(m.cherubDo){ui.pendingDo=m;if(Store.ready&&Store.mode==='cloud')runPendingDo()}});
+function runPendingDo(){const m=ui.pendingDo;if(!m||!m.sid||!m.c)return;ui.pendingDo=null;const cl=get(m.c);if(!cl)return;markS({dataset:{sid:m.sid,c:m.c,d:m.d||today()}},m.cherubDo==='done'?'done':'skip');closeModal()}
 function readHash(){const h=location.hash.slice(1);if(h==='checkin')ui.wantCk=true;ui.route=ROUTES.includes(h)?h:'home'}
 function go(r){if(location.hash.slice(1)!==r)location.hash=r;else{ui.route=r;render()}}
 window.addEventListener('hashchange',()=>{readHash();closeModal();render();window.scrollTo(0,0)});

@@ -43,10 +43,10 @@ function sessionsFor(items, d) {
   const out = [];
   for (const c of clients) {
     const id = 'r_' + c.id + '_' + d, s = sess.get(id);
-    if (scheduledOn(c, d) || (s && s.status)) out.push({ name: c.name, status: (s && s.status) || 'pending' });
+    if (scheduledOn(c, d) || (s && s.status)) out.push({ name: c.name, cid: c.id, sid: id, date: d, monthly: c.pay === 'monthly', status: (s && s.status) || 'pending' });
   }
   for (const s of sess.values()) {
-    if (s.extra && s.date === d) { const c = clients.find(x => x.id === s.clientId); if (c) out.push({ name: c.name, status: s.status || 'pending' }); }
+    if (s.extra && s.date === d) { const c = clients.find(x => x.id === s.clientId); if (c) out.push({ name: c.name, cid: c.id, sid: s.id, date: d, monthly: c.pay === 'monthly', status: s.status || 'pending' }); }
   }
   return out.filter(x => x.status !== 'moved');
 }
@@ -65,11 +65,15 @@ function pendingToday(items, d) {
   return out;
 }
 
-async function sendTo(tokensRef, tokens, title, body) {
+async function sendTo(tokensRef, tokens, title, body, extra) {
   if (!tokens.length) return;
+  const x = extra || {};
+  const notification = { title, body, icon: APP_URL + 'icon-192.png', badge: APP_URL + 'icon-192.png' };
+  if (x.tag) notification.tag = x.tag;
+  if (x.actions) { notification.actions = x.actions; notification.requireInteraction = true; }
   const res = await admin.messaging().sendEachForMulticast({
     tokens,
-    webpush: { notification: { title, body, icon: APP_URL + 'icon-192.png', badge: APP_URL + 'icon-192.png' }, fcmOptions: { link: APP_URL } }
+    webpush: { notification, data: x.data || {}, fcmOptions: { link: APP_URL + (x.hash || '') } }
   });
   // Forget devices that no longer accept notifications.
   await Promise.all(res.responses.map((r, i) => {
@@ -152,7 +156,12 @@ async function runForUser(userRef) {
     if (meta.lastCheckin !== t.date) {
       meta.lastCheckin = t.date; changed = true;
       const all = sessionsFor(items, t.date), p = all.filter(x => x.status === 'pending'), done = all.filter(x => x.status === 'done').length;
-      if (p.length) msgs.push(['✓ Today’s sessions', `${done} of ${all.length} marked visited. ` + (names ? `Still to mark: ${p.map(x => first(x.name)).join(', ')} — visited or cancelled?` : `${p.length} still to mark — tap to answer.`)]);
+      if (p.length && names && p.length <= 8) {
+        // One notification per client, with Visited / Cancelled buttons where the device allows it.
+        p.forEach((x, i) => msgs.push([`Did you visit ${x.name} today?`, `${done} of ${all.length} done today · ${i + 1} of ${p.length} to mark. Tap to answer.`,
+          { tag: x.sid, hash: '#checkin', data: { sid: x.sid, c: x.cid, d: x.date },
+            actions: [{ action: 'done', title: '✓ Visited' }, { action: 'skip', title: '✕ Cancelled' }] }]));
+      } else if (p.length) msgs.push(['✓ Today’s sessions', `${done} of ${all.length} marked visited. ` + (names ? `Still to mark: ${p.map(x => first(x.name)).join(', ')} — visited or cancelled?` : `${p.length} still to mark — tap to answer.`), { hash: '#checkin' }]);
     }
     if (t.dow === 0 && meta.lastSunday !== t.date) {
       meta.lastSunday = t.date; changed = true;
@@ -166,7 +175,7 @@ async function runForUser(userRef) {
     }
   }
 
-  for (const [title, body] of msgs) await sendTo(devRef, tokens, title, body);
+  for (const [title, body, extra] of msgs) await sendTo(devRef, tokens, title, body, extra);
   if (changed) await metaRef.set({ ...meta, sent }, { merge: false });
 }
 
