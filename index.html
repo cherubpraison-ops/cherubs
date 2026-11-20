@@ -345,6 +345,14 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .bdr{display:flex;gap:12px;align-items:center;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--line)}.bdr:last-child{border-bottom:0}
 .bde{font-size:26px}
 .bdhint{background:var(--soft);color:var(--accent);font-weight:600;font-size:13.5px;padding:7px 11px;border-radius:10px;margin-bottom:12px}
+.reasons{display:flex;flex-wrap:wrap;gap:8px}
+.bnote{font-size:12.5px;color:var(--warn);margin-top:8px;font-weight:600}
+.calc{margin-bottom:16px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.kbox{background:var(--panel2);border-radius:12px;padding:12px}
+.kv{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kl{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+.kbox.ok .kv{color:var(--ok)}.kbox.bad .kv{color:var(--danger)}.kbox.warn .kv{color:var(--warn)}
 @media(max-width:900px){.cal-wrap,.money-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){
  .side{display:none}
@@ -413,7 +421,7 @@ const COLORS=['#9a6238','#5f7a8c','#687f52','#b08546','#b5714a','#a6523b','#8a6a
 const CAT_EMOJI={Food:'🍔',Groceries:'🛒',Transport:'🚕',Shopping:'🛍️',Bills:'💡',Rent:'🏠',Health:'💊',Entertainment:'🎬',Travel:'✈️',Education:'📚',Gifts:'🎁',Other:'•',Salary:'💼',Business:'📈',Freelance:'💻',Gift:'🎁',Refund:'↩️','Other income':'➕',Clients:'💰'};
 const INCOME_CATS=['Salary','Business','Freelance','Gift','Refund','Other income'];
 const ICONS=['📄','📝','📚','💡','🎯','🏋️','✈️','💼','🏠','🎨','🧠','💰','🍳','🎵','📅','⭐','🚀','❤️','🌱','👑'];
-const DEFAULT_PREFS={kind:'prefs',id:'prefs',name:'Cherub',currency:'INR',theme:'auto',checkin:'19:00',budget:0,cats:'Food, Groceries, Transport, Shopping, Bills, Rent, Health, Entertainment, Travel, Education, Other'};
+const DEFAULT_PREFS={kind:'prefs',id:'prefs',name:'Cherub',currency:'INR',theme:'auto',checkin:'19:00',preview:'21:00',notifNames:true,budget:0,cats:'Food, Groceries, Transport, Shopping, Bills, Rent, Health, Entertainment, Travel, Education, Other'};
 
 // ---------- store ----------
 class VMap extends Map{set(k,v){Store.ver++;return super.set(k,v)}delete(k){Store.ver++;return super.delete(k)}}
@@ -552,7 +560,7 @@ VIEWS.home=()=>{const p=prefs(),t=today(),h=new Date().getHours(),greet=h<5?'Goo
  const ub=allBills().filter(b=>!b.paid),ubAmt=ub.reduce((a,b)=>a+b.amount,0);
  const mName=parseD(t).toLocaleDateString('en-IN',{month:'long'});
  const reorder=ui.reorder&&cs.length>1;
- return`<div class="mbrand"><span class="wordmark">Cherub’s<small>OS</small></span><button class="icon-btn" data-act="themeToggle" aria-label="Day / night">${ic(document.documentElement.dataset.theme==='night'?'sun':'moon')}</button></div><header class="top"><div><div class="eyebrow">${fmtLongDate(t)}</div><h1 class="hello">${greet}, ${esc(p.name||'Cherub')}</h1>${live||done?`<div class="today-pill">Today · ${done}/${live} sessions done</div>`:''}</div><div style="display:flex;gap:8px"><button class="icon-btn lg dsk" data-act="themeToggle" title="Day / night" aria-label="Day / night">${ic(document.documentElement.dataset.theme==='night'?'sun':'moon')}</button><button class="icon-btn lg" data-act="checkin" title="Check in now" aria-label="Check in now">${ic('bell')}</button><button class="icon-btn lg" data-act="search" aria-label="Search">${ic('search')}</button></div></header>
+ return`<div class="mbrand"><span class="wordmark">Cherub’s<small>OS</small></span><button class="icon-btn" data-act="themeToggle" aria-label="Day / night">${ic(document.documentElement.dataset.theme==='night'?'sun':'moon')}</button></div><header class="top"><div><div class="eyebrow">${fmtLongDate(t)}</div><h1 class="hello">${greet}, ${esc(p.name||'Cherub')}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">${live||done?`<div class="today-pill">Today · ${done}/${live} sessions done</div>`:''}${(()=>{const tm=sessionsOn(addDays(t,1)).filter(x=>stOf(x)!=='moved');return tm.length?`<div class="today-pill">Tomorrow · ${tm.map(x=>esc(String(x.c.name).split(' ')[0])).join(', ')}</div>`:''})()}</div></div><div style="display:flex;gap:8px"><button class="icon-btn lg dsk" data-act="themeToggle" title="Day / night" aria-label="Day / night">${ic(document.documentElement.dataset.theme==='night'?'sun':'moon')}</button><button class="icon-btn lg" data-act="checkin" title="Check in now" aria-label="Check in now">${ic('bell')}</button><button class="icon-btn lg" data-act="search" aria-label="Search">${ic('search')}</button></div></header>
  ${(()=>{const bt=birthdaysOn(t),bm=birthdaysOn(addDays(t,1));if(!bt.length&&!bm.length)return'';return`<section class="card bday">${bt.map(c=>`<div class="bdr" data-act="openClient" data-id="${c.id}"><span class="bde">🎂</span><div class="grow"><b>Today is ${esc(c.name)}’s birthday</b><div class="muted sm">Turns ${ageOf(c.dob)} today · don’t forget to wish them</div></div></div>`).join('')}${bm.map(c=>`<div class="bdr" data-act="openClient" data-id="${c.id}"><span class="bde">🎂</span><div class="grow"><b>Tomorrow is ${esc(c.name)}’s birthday</b><div class="muted sm">Turning ${ageOf(c.dob,addDays(t,1))} tomorrow</div></div></div>`).join('')}</section>`})()}
  <div class="earn"><section class="card ecard"><div class="eyebrow">This week · ${fmtRange(mon,sun)}</div><div class="big">${money(W.amt)}</div><div><b>${W.n}</b> <span class="muted">session${W.n===1?'':'s'} done</span></div><div class="sub"><span>Received <b class="grn">${money(W.rec)}</b></span><span>Unpaid bills <b class="${ubAmt?'red':''}">${money(ubAmt)}</b></span></div></section>
  <section class="card ecard"><div class="eyebrow">${mName}</div><div class="big">${money(M.amt)}</div><div><b>${M.n}</b> <span class="muted">session${M.n===1?'':'s'} done</span></div><div class="sub"><span>Received <b class="grn">${money(M.rec)}</b></span>${(()=>{const u=allBills().filter(b=>!b.paid&&b.from.slice(0,7)===ym).reduce((x,b)=>x+b.amount,0);return`<span>Unpaid <b class="${u?'red':''}">${money(u)}</b></span>`})()}</div></section></div>
@@ -669,17 +677,17 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
  const cs=sortClients(all('client').filter(c=>c.active!==false||all('session').some(s=>s.clientId===c.id&&(s.date||'').startsWith(ym))));
  const days=[];for(let i=1;i<=n;i++)days.push(ym+'-'+pad(i));
  const M=earnStats(ym+'-01',end,true);
- const r_id=x=>x;const rows=cs.map(c=>{let dn=0,cx=0;const cells=days.map(d=>{const xs=sessionsOn(d,c.id);if(!xs.length)return`<td class="${d===t?'tc':''}">${d<=t?`<span class="sc s-add" data-act="sMore" data-sid="r_${r_id(c.id)}_${d}" data-c="${c.id}" data-d="${d}" title="Add a session">+</span>`:''}</td>`;const x=xs[0],st=stOf(x);
+ const r_id=x=>x;const rows=cs.map(c=>{let dn=0,cx=0;const K=monthCalc(c,ym);const cells=days.map(d=>{const xs=sessionsOn(d,c.id);if(!xs.length)return`<td class="${d===t?'tc':''}">${d<=t?`<span class="sc s-add" data-act="sMore" data-sid="r_${r_id(c.id)}_${d}" data-c="${c.id}" data-d="${d}" title="Add a session">+</span>`:''}</td>`;const x=xs[0],st=stOf(x);
    if(st==='done')dn++;if(st==='skip')cx++;
    const sym=st==='done'?'✓':st==='skip'?'✕':st==='moved'?'↻':d<t?'?':'·';
-   return`<td class="${d===t?'tc':''}"><span class="sc s-${st==='pending'?(d<t?'late':'plan'):st}" data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}">${sym}</span></td>`}).join('');
+   return`<td class="${d===t?'tc':''}"><span class="sc s-${st==='pending'?(d<t?'late':'plan'):st}" title="${st==='skip'&&x.s&&x.s.reason?esc(x.s.reason):''}" data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}">${sym}</span></td>`}).join('');
   const bs=allBills(c.id).filter(b=>b.from<=end&&b.to>=ym+'-01'),paid=bs.filter(b=>b.paid).reduce((a,b)=>a+b.amount,0),unpaid=bs.filter(b=>!b.paid).reduce((a,b)=>a+b.amount,0);
-  return{c,dn,cx,cells,earned:(M.per[c.id]||{a:0}).a,paid,unpaid}});
+  return{c,dn,cx,K,cells,earned:(M.per[c.id]||{a:0}).a,paid,unpaid}});
  ui._sheetRows=rows;ui._sheetDays=days;
  return`<header class="top"><div><div class="eyebrow">Session register</div><h1>${monthLabel(ym)}</h1></div><div style="display:flex;gap:4px"><button class="icon-btn lg" data-act="shMove" data-n="-1">${ic('left')}</button><button class="icon-btn lg" data-act="shMove" data-n="1">${ic('right')}</button></div></header>
- ${cs.length?`<div class="card sheetwrap"><table class="reg"><thead><tr><th class="cn">Client</th>${days.map(d=>`<th class="${d===t?'tc':''}"><span>${'SMTWTFS'[parseD(d).getDay()]}</span>${+d.slice(8)}</th>`).join('')}<th>Done</th><th>Canc.</th><th>Earned</th><th>Paid</th><th>Unpaid</th></tr></thead>
- <tbody>${rows.map(r=>`<tr><td class="cn"><button data-act="openClient" data-id="${r.c.id}"><i style="background:${esc(r.c.color||COLORS[0])}"></i>${esc(r.c.name)}</button></td>${r.cells}<td class="nm">${r.dn}</td><td class="nm">${r.cx}</td><td class="nm">${money(r.earned)}</td><td class="nm grn">${money(r.paid)}</td><td class="nm ${r.unpaid?'red':''}">${money(r.unpaid)}</td></tr>`).join('')}
- <tr class="tot"><td class="cn">Total</td>${days.map(()=>'<td></td>').join('')}<td class="nm">${rows.reduce((a,r)=>a+r.dn,0)}</td><td class="nm">${rows.reduce((a,r)=>a+r.cx,0)}</td><td class="nm">${money(rows.reduce((a,r)=>a+r.earned,0))}</td><td class="nm grn">${money(rows.reduce((a,r)=>a+r.paid,0))}</td><td class="nm red">${money(rows.reduce((a,r)=>a+r.unpaid,0))}</td></tr></tbody></table></div>
+ ${cs.length?`<div class="card sheetwrap"><table class="reg"><thead><tr><th class="cn">Client</th>${days.map(d=>`<th class="${d===t?'tc':''}"><span>${'SMTWTFS'[parseD(d).getDay()]}</span>${+d.slice(8)}</th>`).join('')}<th>Planned</th><th>Done</th><th>Canc.</th><th>To do</th><th>Earned</th><th>Paid</th><th>Unpaid</th></tr></thead>
+ <tbody>${rows.map(r=>`<tr><td class="cn"><button data-act="openClient" data-id="${r.c.id}"><i style="background:${esc(r.c.color||COLORS[0])}"></i>${esc(r.c.name)}</button></td>${r.cells}<td class="nm">${r.K.planned}</td><td class="nm grn">${r.dn}</td><td class="nm red">${r.cx}</td><td class="nm">${r.K.todo+r.K.unmarked}</td><td class="nm">${money(r.earned)}</td><td class="nm grn">${money(r.paid)}</td><td class="nm ${r.unpaid?'red':''}">${money(r.unpaid)}</td></tr>`).join('')}
+ <tr class="tot"><td class="cn">Total</td>${days.map(()=>'<td></td>').join('')}<td class="nm">${rows.reduce((a,r)=>a+r.K.planned,0)}</td><td class="nm grn">${rows.reduce((a,r)=>a+r.dn,0)}</td><td class="nm red">${rows.reduce((a,r)=>a+r.cx,0)}</td><td class="nm">${rows.reduce((a,r)=>a+r.K.todo+r.K.unmarked,0)}</td><td class="nm">${money(rows.reduce((a,r)=>a+r.earned,0))}</td><td class="nm grn">${money(rows.reduce((a,r)=>a+r.paid,0))}</td><td class="nm red">${money(rows.reduce((a,r)=>a+r.unpaid,0))}</td></tr></tbody></table></div>
  <div class="muted sm" style="margin:10px 4px">✓ visited · ✕ cancelled · ↻ rescheduled · ? not marked · + add a session on any day · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
  <button class="btn" data-act="copySheet">Copy sheet (paste into Excel / Google Sheets)</button>`
  :emptyBig('📋','No clients yet','Add clients and their visits will fill this register.')}`};
@@ -689,10 +697,12 @@ VIEWS.prefs=()=>{
  <section class="card pad"><h3>You</h3>
  <label class="fld half"><span>Name</span><input data-ch="pref" data-k="name" value="${esc(p.name)}"></label>
  <label class="fld half"><span>Look</span><select data-ch="pref" data-k="theme">${[['auto','Auto (day / night from phone)'],['day','Day — soft sand'],['night','Night — warm espresso']].map(([v,l])=>`<option value="${v}" ${(p.theme==='light'?'auto':p.theme)===v?'selected':''}>${l}</option>`).join('')}</select></label>
+ <label class="fld half"><span>Tomorrow’s sessions reminder at</span><input type="time" data-ch="pref" data-k="preview" value="${esc(p.preview||'21:00')}"></label>
  <label class="fld half"><span>Daily session check-in at</span><input type="time" data-ch="pref" data-k="checkin" value="${esc(p.checkin||'19:00')}"></label></section>
  <section class="card pad"><h3>Notifications</h3><div class="fld muted" style="font-weight:500" id="pushState">${pushStateText()}</div>
- <div class="fld" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="pushOn">Turn on notifications</button></div>
- <label class="chk"><input type="checkbox" data-ch="prefNotif" ${p.notifNames?'checked':''}> Show client names in notifications (off = private on the lock screen)</label></section>
+ <div class="fld" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="pushOn">Turn on notifications</button><button class="btn" data-act="testPush">Send a test notification</button></div>
+ <div class="fld muted" style="font-weight:500">You’ll get: 🌙 tomorrow’s sessions at ${esc(p.preview||'21:00')} the night before · ✓ the check-in at ${esc(p.checkin||'19:00')} (who’s still to mark) · 💰 Sunday advances · month-end fee · ⏰ payment follow-ups · 🎂 birthdays at 9 am · your reminders.</div>
+ <label class="chk"><input type="checkbox" data-ch="prefNotif" ${p.notifNames!==false?'checked':''}> Show client names in notifications (off = private on the lock screen)</label></section>
  <section class="card pad"><h3>Account</h3><div class="fld muted" style="font-weight:500">Signed in as ${esc(Store.email||'')}</div><div class="fld"><button class="btn" data-act="signOut" style="align-self:flex-start">Sign out</button></div></section>
  <section class="card pad"><h3>Home-screen icon</h3><div class="fld" style="align-items:center"><img id="appIcon" alt="Cherub icon" style="width:180px;height:180px;border-radius:40px;box-shadow:var(--shadow)"></div><div class="fld muted" style="font-weight:500">This is Cherub’s app icon. On iPhone: open in Safari → Share → Add to Home Screen. On Mac: Safari → File → Add to Dock, or Chrome → Install.</div></section>
  <section class="card pad"><h3>Money</h3>
@@ -843,7 +853,21 @@ function schedText(c){if(c.sched==='flex')return'Flexible days';if(c.sched==='al
 const av=(c,lg)=>`<span class="av ${lg?'lg':''}" style="background:${esc(c.color||COLORS[0])}" data-act="openClient" data-id="${c.id}">${esc(String(c.name||'?').trim()[0]||'?').toUpperCase()}</span>`;
 function sessActions(x){const st=stOf(x),a=`data-sid="${esc(x.id)}" data-c="${x.c.id}" data-d="${x.date}"`;
  return st==='pending'?`<div class="sact"><button class="btn sm okb" data-act="sDone" ${a}>${ic('check')}Visited</button><button class="btn sm nob" data-act="sSkip" ${a}>✕ Cancelled</button>${x.c.pay==='monthly'?`<button class="btn sm" data-act="sPost" ${a}>↻ Reschedule</button>`:''}</div>`
- :`<button class="schip st-${st}" data-act="sUndo" ${a}>${st==='done'?'✓ Visited':st==='skip'?'✕ Cancelled':'↻ Rescheduled to '+esc(x.s.movedTo?dueLabel(x.s.movedTo):'')}<span class="u">Undo</span></button>`}
+ :`<button class="schip st-${st}" data-act="sUndo" ${a}>${st==='done'?'✓ Visited':st==='skip'?'✕ Cancelled'+(x.s&&x.s.reason?' · '+esc(x.s.reason):''):'↻ Rescheduled to '+esc(x.s.movedTo?dueLabel(x.s.movedTo):'')}<span class="u">Undo</span></button>`}
+const REASONS=['Client unwell','Client travelling','Client busy','I couldn’t go','Holiday / festival','Weather'];
+function openReason(data,ret){ui.checkinOpen=false;const cl=get(data.c);if(!cl)return;const a=`data-sid="${esc(data.sid)}" data-c="${data.c}" data-d="${data.d}" data-ret="${ret?1:''}"`,m=$('#modal');
+ m.innerHTML=`<div class="scrim" data-act="rCancel" ${a}></div><div class="sheet morelist" style="grid-template-columns:1fr"><div class="sheet-h"><h3>Why was it cancelled?</h3><button class="icon-btn" data-act="rCancel" ${a} aria-label="Close">✕</button></div>
+ <div class="muted sm">${esc(cl.name)} · ${fmtLongDate(data.d)}</div>
+ <div class="reasons">${REASONS.map(r=>`<button class="chip" data-act="sReason" data-r="${esc(r)}" ${a}>${esc(r)}</button>`).join('')}</div>
+ <label class="fld"><span>Or type a reason</span><input id="rOther" placeholder="e.g. Doctor’s appointment"></label>
+ <div class="sheet-f"><button class="btn ghost" data-act="sReason" data-r="" ${a}>Skip reason</button><span class="grow"></span><button class="btn primary" data-act="sReason" data-other="1" ${a}>Save</button></div></div>`;m.classList.add('open')}
+function openLater(bid,ret){ui.checkinOpen=false;const b=getBill(bid);if(!b)return;const t=today(),a=`data-b="${esc(bid)}" data-ret="${ret?1:''}"`,m=$('#modal');
+ const opt=(n,l)=>`<button class="nav" data-act="laterTo" data-to="${addDays(t,n)}" ${a}>⏰&nbsp; ${l} · ${parseD(addDays(t,n)).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</button>`;
+ m.innerHTML=`<div class="scrim" data-act="lCancel" ${a}></div><div class="sheet morelist" style="grid-template-columns:1fr"><div class="sheet-h"><h3>Remind me about ${esc(b.c.name)}’s payment</h3><button class="icon-btn" data-act="lCancel" ${a} aria-label="Close">✕</button></div>
+ <div class="muted sm">${billTitle(b)} · ${money(b.amount)} — stays unpaid until you tap Paid</div>
+ ${opt(1,'Tomorrow')}${opt(2,'In 2 days')}${opt(3,'In 3 days')}
+ <label class="fld"><span>Or pick a date</span><input type="date" id="lDate" min="${t}" value="${addDays(t,4)}"></label>
+ <div class="sheet-f"><button class="btn ghost" data-act="lCancel" ${a}>Cancel</button><span class="grow"></span><button class="btn primary" data-act="laterTo" data-pick="1" ${a}>Remind me then</button></div></div>`;m.classList.add('open')}
 function openPostpone(data,ret){ui.checkinOpen=false;const{sid,c,d}=data,cl=get(c);if(!cl)return;const base=d<today()?today():d,t1=addDays(base,1),t7=addDays(base,7);
  const a=`data-sid="${esc(sid)}" data-c="${c}" data-d="${d}" data-ret="${ret?1:''}"`,m=$('#modal');
  const lab=x=>parseD(x).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
@@ -892,7 +916,9 @@ function billSub(b){return b.kind==='month'?'Monthly fee · paid in advance':`${
 function billBox(b){const a=`data-b="${esc(b.id)}"`;
  return`<div class="card bbox ${b.paid?'paid':''}"><div class="cbox-h">${av(b.c)}<div class="grow"><div class="cbox-n">${esc(b.c.name)}</div><div class="row-m"><span>${billTitle(b)}</span><span>${billSub(b)}</span></div></div><div class="bamt">${money(b.amount)}</div></div>
  <div class="sact2">${b.paid?`<button class="schip st-done" data-act="billUndo" ${a}>✓ Paid ${b.doc&&b.doc.paidOn?dueLabel(b.doc.paidOn).toLowerCase():''}<span class="u">Undo</span></button><span class="grow"></span><button class="btn sm ghost" data-act="billSend" ${a}>View</button>`
-  :`<button class="btn sm okb" data-act="billPaid" ${a}>${ic('check')}Paid</button><button class="btn sm" data-act="billSend" ${a}>Send reminder</button>`}</div></div>`}
+  :`<button class="btn sm okb" data-act="billPaid" ${a}>${ic('check')}Paid</button><button class="btn sm" data-act="billLater" ${a}>⏰ Remind me later</button>`}</div>${b.paid?'':billNote(b)}</div>`}
+function billNote(b){const t=today(),due=b.kind==='week'?b.sun:addDays(b.from,-1),late=Math.round((parseD(t)-parseD(due))/864e5),f=b.doc&&b.doc.status==='later'?b.doc.followUp:'';
+ const parts=[];if(late>0)parts.push(`Waiting ${late} day${late===1?'':'s'}`);if(f)parts.push(`⏰ I’ll remind you ${dueLabel(f).toLowerCase()}`);return parts.length?`<div class="bnote">${parts.join(' · ')}</div>`:''}
 function weekStrip(c){const t=today(),mon=weekStartOf(t);let h='';
  for(let i=0;i<7;i++){const d=addDays(mon,i),xs=sessionsOn(d,c.id);let cls='none',sym='',a='';
   if(xs.length){const x=xs[0],st=stOf(x);a=`data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}"`;
@@ -913,7 +939,7 @@ function clientBox(c){const t=today(),m=clientMoney(c),ts=sessionsOn(t,c.id),um=
 let promptedDay='';const ckSkip=new Set();
 function ckQueue(){const t=today(),q=[];sessionsOn(t).filter(x=>stOf(x)==='pending'&&!ckSkip.has(x.id)).forEach(x=>q.push({t:'s',x}));
  const sun=parseD(t).getDay()===0,mEnd=t===lastDay(t.slice(0,7));
- allBills().filter(b=>!b.paid&&!ckSkip.has(b.id)&&(ui.ckAll||(b.kind==='week'&&sun)||(b.kind==='month'&&mEnd))).forEach(b=>q.push({t:'b',b}));return q}
+ allBills().filter(b=>!b.paid&&!ckSkip.has(b.id)&&(ui.ckAll||(b.kind==='week'&&sun)||(b.kind==='month'&&mEnd)||(b.doc&&b.doc.followUp&&b.doc.followUp<=t))).forEach(b=>q.push({t:'b',b}));return q}
 const monthDoneCount=(c,d)=>all('session').filter(s=>s.clientId===c.id&&s.status==='done'&&(s.date||'').slice(0,7)===d.slice(0,7)&&s.date<=d).length;
 function checkinHtml(){const q=ckQueue(),total=Math.max(ui.ckTotal||0,q.length),i=total-q.length+1,t=today();
  const close=`<button class="icon-btn" data-act="closeModal" aria-label="Close">✕</button>`;
@@ -933,7 +959,7 @@ function checkinHtml(){const q=ckQueue(),total=Math.max(ui.ckTotal||0,q.length),
  <div class="ck-amt">${money(b.amount)}</div><div class="muted sm">${billSub(b)}</div>
  ${b.kind==='week'?`<div class="dchips">${b.planned.map(d=>`<span>${dlab(d)}</span>`).join('')}</div>${b.credit?`<div class="muted sm">−${money(b.credit)} for ${b.cancelled.length} cancelled last week (${b.cancelled.map(dlab).join(', ')})</div>`:''}`:''}
  <div class="ck-btns two"><button class="btn big okb" data-act="billPaid" ${a}>${ic('check')}Paid</button><button class="btn big nob" data-act="ckLater" data-unpaid="1" data-id="${esc(b.id)}">Not paid yet</button></div>
- <button class="btn ghost sm" data-act="billSend" ${a} style="justify-self:center">Send payment reminder on WhatsApp</button></div>`}
+ <button class="btn ghost sm" data-act="billLater" ${a} style="justify-self:center">⏰ Remind me later about this payment</button></div>`}
 function openCheckin(reset){if(reset!==undefined){ui.ckAll=!!reset;ckSkip.clear();ui.ckTotal=0}ui.checkinOpen=true;ui.ckTotal=Math.max(ui.ckTotal||0,ckQueue().length);const m=$('#modal');m.innerHTML=checkinHtml();m.classList.add('open')}
 function maybePrompt(){if(!Store.ready||$('#modal').classList.contains('open'))return;const t=today();if(nowLocal().slice(11)<(prefs().checkin||'19:00'))return;
  let seen=promptedDay===t;try{seen=seen||localStorage.getItem('princeos.ck')===t}catch(e){}if(seen)return;
@@ -966,6 +992,15 @@ VIEWS.clients=()=>{const cur=ui.clientId&&get(ui.clientId);if(cur)return clientD
  ${(()=>{const bs=allBills().slice(0,16);return bs.length?`<div class="group"><div class="group-h">Bills · weekly (Sundays) & monthly (month end)</div><div class="bills">${bs.map(billBox).join('')}</div></div>`:''})()}`
  :emptyBig('🧑‍🤝‍🧑','No clients yet','Add each client with their days and fee. Cherub’s OS will ask you every day whether each session happened.')}`};
 function clientCard(c){const m=clientMoney(c);return`<div class="card ccard ${c.active===false?'paused':''}" data-act="openClient" data-id="${c.id}">${av(c)}<div class="grow"><div class="row-t">${esc(c.name)}${c.active===false?' <span class="muted sm">· paused</span>':''}</div><div class="row-m"><span>${schedText(c)}</span><span>${esc(payLabel(c,m))}</span></div></div><div style="text-align:right">${m.due>0?`<div class="due">${money(m.due)}</div><div class="muted sm">due</div>`:m.due<0?`<div class="settled">+${money(-m.due)}</div><div class="muted sm">advance</div>`:'<div class="settled">Settled</div>'}</div></div>`}
+function monthCalc(c,ym){const t=today(),end=lastDay(ym),r={planned:0,done:0,skip:0,moved:0,unmarked:0,todo:0,reasons:[]};
+ for(let d=ym+'-01';d<=end;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{const st=stOf(x);if(st==='moved'){r.moved++;return}r.planned++;
+  if(st==='done')r.done++;else if(st==='skip'){r.skip++;r.reasons.push({d,why:(x.s&&x.s.reason)||''})}else if(d<t)r.unmarked++;else r.todo++});return r}
+function calcHtml(c){const ym=ui.calcMonth||today().slice(0,7),k=monthCalc(c,ym);
+ const box=(l,v,cls)=>`<div class="kbox ${cls||''}"><div class="kv">${v}</div><div class="kl">${l}</div></div>`;
+ return`<section class="card pad calc"><div class="sec-h"><h3>Session calculator</h3><span class="grow"></span><button class="icon-btn" data-act="calcMove" data-n="-1" aria-label="Previous month">${ic('left')}</button><b class="sm">${monthLabel(ym)}</b><button class="icon-btn" data-act="calcMove" data-n="1" aria-label="Next month">${ic('right')}</button></div>
+ <div class="kgrid">${box('Planned',k.planned)}${box('Done ✓',k.done,'ok')}${box('Cancelled ✕',k.skip,'bad')}${box('Still to do',k.todo)}${k.unmarked?box('Not marked ?',k.unmarked,'warn'):''}${k.moved?box('Rescheduled ↻',k.moved):''}</div>
+ ${k.planned?`<div class="meter" style="margin-top:12px"><i style="width:${Math.round(k.done/k.planned*100)}%;background:var(--ok)"></i></div><div class="muted sm" style="margin-top:6px">${k.done} of ${k.planned} sessions done this month${k.todo?` · ${k.todo} still to do`:''}</div>`:'<div class="empty">No sessions planned this month.</div>'}
+ ${k.reasons.length?`<div class="group-h" style="margin-top:14px">Why sessions were cancelled</div>${k.reasons.map(r=>`<div class="row-m" style="padding:4px 0"><span>✕ ${parseD(r.d).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</span><span style="color:var(--text)">${esc(r.why||'No reason given')}</span></div>`).join('')}`:''}</section>`}
 function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mDone=0,mSched=0;
  for(let d=ym+'-01';d<=t;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{const s=stOf(x);if(s!=='moved'&&s!=='skip')mSched++;if(s==='done')mDone++});
  const from=c.start&&c.start>addDays(t,-30)?c.start:addDays(t,-30),hist=[];for(let d=t;d>=from;d=addDays(d,-1))sessionsOn(d,c.id).forEach(x=>hist.push(x));
@@ -977,6 +1012,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
  <div class="card stat"><div class="l">${m.due<0?'Advance':'Due'}</div><div class="v" style="color:${m.due>0?'var(--danger)':'var(--ok)'}">${money(Math.abs(m.due))}</div></div>
  <div class="card stat"><div class="l">Total paid</div><div class="v">${money(m.paid)}</div></div><div class="card stat"><div class="l">${third[0]}</div><div class="v">${third[1]}</div></div></div>
  <div class="addbar" style="flex-wrap:wrap"><button class="btn primary" data-act="payClient" data-id="${c.id}">${ic('plus')}Record payment</button><button class="btn" data-act="pauseClient" data-id="${c.id}">${c.active===false?'Resume client':'Pause client'}</button>${c.phone?`<a class="btn" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a>`:''}</div>
+ ${calcHtml(c)}
  <div class="money-grid"><section class="card pad"><div class="sec-h"><h3>Sessions</h3><span class="muted sm">last 30 days</span></div>${hist.length?hist.map(x=>sessRow(x,true)).join(''):'<div class="empty">No sessions yet.</div>'}
  ${next.length?`<div class="group-h" style="margin-top:14px">Coming up</div>${next.map(x=>`<div class="row-m" style="padding:3px 0">${dueLabel(x.date)}${x.s&&x.s.from?' · rescheduled':''}</div>`).join('')}`:''}</section>
  ${(()=>{const bs=allBills(c.id).slice(0,8);return bs.length?`<div class="group" style="grid-column:1/-1;margin:0"><div class="group-h">Bills</div><div class="bills">${bs.map(billBox).join('')}</div></div>`:''})()}
@@ -1011,13 +1047,13 @@ function editPay(p={}){const isNew=!p.id,c=get(p.clientId);if(!c)return;const m=
   onSave:v=>{put({...p,...v,kind:'payment',id:p.id||uid(),clientId:c.id,created:p.created||Date.now()});toast(money(v.amount)+' received from '+c.name)},
   onDelete:isNew?null:()=>{remove(p.id);toast('Payment deleted')}})}
 function sessDoc(sid,cid,d){const s=get(sid);return s?{...s}:{kind:'session',id:sid,clientId:cid,date:d,extra:false}}
-function markS(el,st){const{sid,c,d}=el.dataset;const s=sessDoc(sid,c,d);if(s.movedId){remove(s.movedId,true);delete s.movedId;delete s.movedTo}s.status=st;put(s);const cl=get(c);toast((cl?cl.name+' · ':'')+(st==='done'?'Visited ✓':'Cancelled — not charged'))}
+function markS(el,st,reason){const{sid,c,d}=el.dataset;const s=sessDoc(sid,c,d);if(s.movedId){remove(s.movedId,true);delete s.movedId;delete s.movedTo}s.status=st;if(st==='skip')s.reason=reason||'';else delete s.reason;put(s);const cl=get(c);toast((cl?cl.name+' · ':'')+(st==='done'?'Visited ✓':'Cancelled — not charged'))}
 function moveS(el,to){const{sid,c,d}=el.dataset;const s=sessDoc(sid,c,d);if(s.movedId)remove(s.movedId,true);const nid=uid();
  put({kind:'session',id:nid,clientId:c,date:to,status:'pending',extra:true,from:d,created:Date.now()},{silent:true});
  s.status='moved';s.movedTo=to;s.movedId=nid;put(s);toast('Rescheduled to '+dueLabel(to))}
 const CLIENT_ACT={
  newClient(){editClient()},
- openClient(el){closeModal();ui.clientId=el.dataset.id;go('clients');if(ui.route==='clients')render();window.scrollTo(0,0)},
+ openClient(el){closeModal();ui.clientId=el.dataset.id;ui.calcMonth=today().slice(0,7);go('clients');if(ui.route==='clients')render();window.scrollTo(0,0)},
  clientsBack(){ui.clientId=null;render()},
  editClient(el){editClient(get(el.dataset.id))},
  payClient(el){editPay({clientId:el.dataset.id})},editPay(el){editPay(get(el.dataset.id))},
@@ -1048,7 +1084,15 @@ const CLIENT_ACT={
  billCopy(){const ta=$('#billTa');navigator.clipboard.writeText(ta.value).then(()=>toast('Bill copied — paste it in WhatsApp')).catch(()=>{ta.focus();ta.select();toast('Selected — use your Copy command')})},
  sAllDone(el){if(!el.dataset.armed){el.dataset.armed=1;el.textContent='Tap again to confirm';setTimeout(()=>{if(el.isConnected){delete el.dataset.armed;el.textContent='Mark all done'}},3000);return}
   const items=unmarked().map(x=>({...sessDoc(x.id,x.c.id,x.date),status:'done',updated:Date.now()}));bulk(items).then(()=>toast(items.length+' sessions marked done ✓'))},
- sSkip(el){if(el.closest('.morelist'))closeModal();markS(el,'skip')},
+ sSkip(el){openReason({...el.dataset},!!el.closest('.ck1'))},
+ sReason(el){const r=el.dataset.other?(($('#rOther')||{}).value||'').trim():el.dataset.r;const ret=el.dataset.ret;const data={dataset:{...el.dataset}};closeModal();markS(data,'skip',r);if(ret)openCheckin()},
+ rCancel(el){if(el.dataset.ret)openCheckin();else closeModal()},
+ billLater(el){openLater(el.dataset.b,!!el.closest('.ck1'))},
+ laterTo(el){const to=el.dataset.pick?(($('#lDate')||{}).value||''):el.dataset.to;if(!to){toast('Pick a date');return}const b=getBill(el.dataset.b);const ret=el.dataset.ret;closeModal();if(!b)return;
+  put({kind:'bill',id:b.id,clientId:b.c.id,period:b.kind,from:b.from,status:'later',followUp:to,amount:b.amount,title:billTitle(b),count:b.count});toast('I’ll remind you '+dueLabel(to).toLowerCase());if(ret){ckSkip.add(b.id);openCheckin()}},
+ lCancel(el){if(el.dataset.ret)openCheckin();else closeModal()},
+ testPush(){testNotification()},
+ calcMove(el){ui.calcMonth=shiftMonth(ui.calcMonth||today().slice(0,7),+el.dataset.n);render()},
  sMove(el){if(el.closest('.morelist'))closeModal();const d=el.dataset.d,base=d<today()?today():d;moveS(el,addDays(base,+el.dataset.n))},
  sPick(el){const data={dataset:{...el.dataset}};closeModal();openForm({title:'Reschedule to…',fields:[{k:'date',label:'New date',type:'date',def:addDays(today(),1),req:1}],onSave:v=>moveS(data,v.date)})},
  sMore(el){ui.checkinOpen=false;const{sid,c,d}=el.dataset,cl=get(c);const a=`data-sid="${esc(sid)}" data-c="${c}" data-d="${d}"`;const m=$('#modal');
@@ -1089,6 +1133,11 @@ async function setupPush(ask){
   if(token){await Store.db.collection('users').doc(Store.uid).collection('devices').doc(token.replace(/[^A-Za-z0-9_-]/g,'').slice(-120)).set({token,ua:navigator.userAgent.slice(0,200),updated:Date.now()});}
   if(!Store._onMsg){Store._onMsg=1;msg.onMessage(p=>{const n=p.notification||{};toast((n.title?n.title+' · ':'')+(n.body||''))})}
   return'granted'}catch(e){console.warn(e);return'error'}}
+async function testNotification(){
+ if(!pushSupported()){toast(/iPhone|iPad/.test(navigator.userAgent)&&!isStandalone()?'Open Cherub from your Home Screen icon first':'Notifications aren’t supported here');return}
+ if(Notification.permission!=='granted'){const r=await setupPush(true);if(r!=='granted'){toast('Allow notifications first');return}}
+ try{const reg=Store.swReg||await navigator.serviceWorker.ready;await reg.showNotification('Cherub’s OS',{body:'✅ Notifications are working on this device.',icon:'icon-192.png',badge:'icon-192.png'})}catch(e){}
+ try{await Store.db.collection('users').doc(Store.uid).collection('meta').doc('test').set({at:Date.now()});toast('Test sent ✓ — a second one comes from the server within ~15 minutes')}catch(e){toast('Test shown on this device')}}
 // ---------- voice ----------
 function setupVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;let rec=null,act=false;const h={p:[],f:[],s:[]};
  const d={start(){return new Promise((res,rej)=>{try{rec=new SR();rec.lang='en-IN';rec.interimResults=true;rec.continuous=true;

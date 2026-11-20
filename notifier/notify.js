@@ -35,6 +35,21 @@ function scheduledOn(c, d) {
   }
   return (c.days || []).map(Number).includes(parseD(d).getUTCDay());
 }
+const addDays = (s, k) => { const d = parseD(s); d.setUTCDate(d.getUTCDate() + k); return ymd(d); };
+const first = n => String(n || '').split(' ')[0];
+function sessionsFor(items, d) {
+  const clients = items.filter(i => i.kind === 'client').sort((a, b) => ((a.order ?? 1e12) - (b.order ?? 1e12)));
+  const sess = new Map(items.filter(i => i.kind === 'session').map(s => [s.id, s]));
+  const out = [];
+  for (const c of clients) {
+    const id = 'r_' + c.id + '_' + d, s = sess.get(id);
+    if (scheduledOn(c, d) || (s && s.status)) out.push({ name: c.name, status: (s && s.status) || 'pending' });
+  }
+  for (const s of sess.values()) {
+    if (s.extra && s.date === d) { const c = clients.find(x => x.id === s.clientId); if (c) out.push({ name: c.name, status: s.status || 'pending' }); }
+  }
+  return out.filter(x => x.status !== 'moved');
+}
 function pendingToday(items, d) {
   const clients = items.filter(i => i.kind === 'client');
   const sess = new Map(items.filter(i => i.kind === 'session').map(s => [s.id, s]));
@@ -75,7 +90,8 @@ async function runForUser(userRef) {
   const items = (await userRef.collection('items').get()).docs.map(d => ({ ...d.data(), id: d.id }));
   const prefs = items.find(i => i.kind === 'prefs') || {};
   const checkin = prefs.checkin || '19:00';
-  const names = !!prefs.notifNames;
+  const names = prefs.notifNames !== false;
+  const preview = prefs.preview || '21:00';
   const metaRef = userRef.collection('meta').doc('notify');
   const metaSnap = await metaRef.get();
   const meta = metaSnap.exists ? metaSnap.data() : {};
@@ -83,6 +99,30 @@ async function runForUser(userRef) {
   const t = nowLocal();
   const msgs = [];
   let changed = false;
+
+  // Test requested from Settings.
+  const testRef = userRef.collection('meta').doc('test');
+  const test = await testRef.get();
+  if (test.exists) { msgs.push(['Cherub’s OS', '✅ Test from the server — your reminders will arrive just like this.']); await testRef.delete(); }
+
+  // Payment follow-ups ("Remind me later" on a bill).
+  meta.follow = meta.follow || {};
+  if (t.hm >= '10:00') for (const b of items) {
+    if (b.kind !== 'bill' || b.status !== 'later' || !b.followUp || b.followUp > t.date || meta.follow[b.id] === b.followUp) continue;
+    const c = items.find(i => i.id === b.clientId);
+    msgs.push(['💰 Payment follow-up', names && c ? `${c.name} — ${b.title || 'payment'} · ₹${Number(b.amount || 0).toLocaleString('en-IN')} still unpaid.` : 'A client payment is still unpaid. Tap to check.']);
+    meta.follow[b.id] = b.followUp; changed = true;
+  }
+
+  // Night-before preview of tomorrow's sessions.
+  if (t.hm >= preview && meta.lastPreview !== t.date) {
+    meta.lastPreview = t.date; changed = true;
+    const tm = addDays(t.date, 1), list = sessionsFor(items, tm).filter(x => x.status === 'pending');
+    if (list.length) {
+      const day = parseD(tm).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'UTC' });
+      msgs.push(['🌙 Tomorrow · ' + day, names ? `${list.length} session${list.length === 1 ? '' : 's'}: ${list.map(x => first(x.name)).join(', ')}` : `You have ${list.length} session${list.length === 1 ? '' : 's'} tomorrow.`]);
+    }
+  }
 
   // Reminders that are due (up to 90 minutes late, in case GitHub runs late).
   const from = minusMinutes(t.stamp, 90);
@@ -111,8 +151,8 @@ async function runForUser(userRef) {
   if (t.hm >= checkin) {
     if (meta.lastCheckin !== t.date) {
       meta.lastCheckin = t.date; changed = true;
-      const p = pendingToday(items, t.date);
-      if (p.length) msgs.push(['Cherub', names ? `Did you visit ${p.join(', ')} today? Tap to mark.` : `Time to mark today's ${p.length} session${p.length === 1 ? '' : 's'}.`]);
+      const all = sessionsFor(items, t.date), p = all.filter(x => x.status === 'pending'), done = all.filter(x => x.status === 'done').length;
+      if (p.length) msgs.push(['✓ Today’s sessions', `${done} of ${all.length} marked visited. ` + (names ? `Still to mark: ${p.map(x => first(x.name)).join(', ')} — visited or cancelled?` : `${p.length} still to mark — tap to answer.`)]);
     }
     if (t.dow === 0 && meta.lastSunday !== t.date) {
       meta.lastSunday = t.date; changed = true;
