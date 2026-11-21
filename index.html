@@ -362,6 +362,18 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .amb-ov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column}
 .amb-bar{display:flex;gap:12px;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);background:var(--solid)}
 .amb-ov iframe{flex:1;border:0;width:100%;background:#fff}
+.asdoc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow)}
+.asd-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.asd-h h3{font-family:Fraunces,serif;font-size:22px;margin:2px 0}
+.asd-score{font-size:34px;font-weight:700;text-align:center;line-height:1}.asd-score span{display:block;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em}
+.asd-parts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.asd-parts div{background:var(--panel2);border-radius:10px;padding:8px;text-align:center}.asd-parts b{display:block;font-size:20px}.asd-parts span{font-size:11px;color:var(--muted);font-weight:600}
+.asdoc h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.asdoc ul{margin:0;padding-left:18px;line-height:1.6;font-size:14px}
+.kv{width:100%;border-collapse:collapse;font-size:14px}.kv th{text-align:left;color:var(--muted);font-weight:600;width:42%;padding:5px 8px 5px 0;vertical-align:top}.kv td{padding:5px 0;border-bottom:1px solid var(--line)}
+.as-client{font-family:Fraunces,serif;font-size:20px;margin:22px 4px 10px}
+.print-title{display:none}
+@media print{.side,.bottom,.mic-fab,.no-print,.note-bar,#alerts,#toast{display:none!important}body::before{display:none}body{background:#fff;color:#000}main{padding:0!important;max-width:none}.print-title{display:block;margin-bottom:10px}.asdoc{box-shadow:none;break-inside:avoid;border-color:#ccc;background:#fff}.as-client{break-before:page}.as-client:first-of-type{break-before:auto}}
 @media(max-width:900px){.cal-wrap,.money-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){
  .side{display:none}
@@ -386,6 +398,7 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
  .sact .btn{flex:1 1 auto;justify-content:center;padding:8px 4px;font-size:12.5px;min-width:0}
  .clist,.cboxes,.bills{grid-template-columns:1fr}
  .mbrand{display:flex}
+ .asd-parts{grid-template-columns:repeat(2,1fr)}
  .dsk{display:none}
  .hstats{grid-template-columns:1fr 1fr}
  .earn{grid-template-columns:1fr}
@@ -499,7 +512,7 @@ document.addEventListener('pointerup',()=>{ptrDown=false;setTimeout(flush,0)},tr
 document.addEventListener('focusout',()=>setTimeout(flush,0));
 
 // ---------- ui state & routing ----------
-const ROUTES=['home','clients','sheet','tasks','notes','pages','reminders','calendar','money','prefs'];
+const ROUTES=['home','clients','sheet','assessments','tasks','notes','pages','reminders','calendar','money','prefs'];
 const ui={route:'home',clientId:null,noteId:null,pageId:null,noteFolder:'All',noteQ:'',taskFilter:'today',calMonth:today().slice(0,7),calDay:today(),moneyMonth:today().slice(0,7),iconPick:false,showDone:false};
 let after=null;
 (function(){try{const q=new URLSearchParams(location.search);if(q.get('do')){ui.pendingDo={cherubDo:q.get('do'),sid:q.get('sid'),c:q.get('c'),d:q.get('d')};history.replaceState(null,'',location.pathname+'#home')}}catch(e){}})();
@@ -703,6 +716,35 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
  <div class="muted sm" style="margin:10px 4px">✓ visited · ✕ cancelled · ↻ rescheduled · ? not marked · + add a session on any day · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
  <button class="btn" data-act="copySheet">Copy sheet (paste into Excel / Google Sheets)</button>`
  :emptyBig('📋','No clients yet','Add clients and their visits will fill this register.')}`};
+const JNAME={neck:'Neck',uback:'Upper back',lback:'Lower back',shoulder:'Shoulder',elbow:'Elbow',wrist:'Wrist / hand',hip:'Hip',knee:'Knee',ankle:'Ankle / foot'};
+function aval(a,k){const v=a[k];if(v==null||v===''||(Array.isArray(v)&&!v.length))return'';const arr=Array.isArray(v)?v:[v];
+ const t=arr.map(x=>x==='Other'?(a[k+'_other']||'Other'):x).join(', ');return t+(a[k+'_note']?` (${a[k+'_note']})`:'')}
+function asDoc(x){const a=x.record||{},sc=x.score||{},c=get(x.clientId)||{},n=v=>v==null||v===''?'–':Math.round(v);
+ const row=(l,v)=>v?`<tr><th>${esc(l)}</th><td>${esc(v)}</td></tr>`:'';
+ const sect=(h,rows)=>rows.trim()?`<h4>${h}</h4><table class="kv">${rows}</table>`:'';
+ const joints=Object.entries(a.jd||{}).filter(([k,e])=>e&&(+e.pain>0||e.note)).map(([k,e])=>{const[j,sd]=k.split('|');return`${JNAME[j]||j}${sd==='R'?' (Right)':sd==='L'?' (Left)':''}${+e.pain>0?' — pain '+e.pain+'/10':''}${e.note?' · '+e.note:''}`});
+ return`<article class="asdoc">
+ <div class="asd-h"><div><div class="eyebrow">${esc(x.visit||'Assessment')} · ${fmtLongDate(x.date)}</div><h3>${esc(a.name||c.name||'Client')}</h3>
+ <div class="muted sm">${[a.cid?'Client No. '+a.cid:'',a.age?'Age '+a.age:'',a.assessor?'Assessed by '+a.assessor:''].filter(Boolean).map(esc).join(' · ')}</div></div>
+ <div class="asd-score" style="color:${scoreCol(sc.amble)}">${n(sc.amble)}<span>AMBLE</span></div></div>
+ <div class="asd-parts">${[['Mobility',sc.function_psfs],['Strength',sc.strength],['Pain',sc.pain],['Balance & coord.',sc.balanceCoordination]].map(([l,v])=>`<div><b style="color:${scoreCol(v)}">${n(v)}</b><span>${l}</span></div>`).join('')}</div>
+ ${(x.findings||[]).length?`<h4>Key findings</h4><ul>${x.findings.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
+ ${sect('Health',row('Past medical conditions',aval(a,'cond'))+row('Medication',aval(a,'meds'))+row('Menopause',aval(a,'meno'))+row('Activity level',aval(a,'activity'))+row('Sleep',aval(a,'sleep')))}
+ ${sect('Pain & movement',(joints.length?`<tr><th>Painful areas</th><td>${joints.map(esc).join('<br>')}</td></tr>`:'')+row('Since',aval(a,'dur'))+row('Getting',aval(a,'trend'))+row('Feels like',aval(a,'ptype'))+row('Worse with',aval(a,'worse'))+row('Posture',aval(a,'posture')))}
+ ${sect('Balance & falls',row('Fallen in the past year',aval(a,'st_fall'))+row('How many times',aval(a,'st_times'))+row('Injured',aval(a,'st_inj'))+row('Feels unsteady',aval(a,'st_unst'))+row('Worries about falling',aval(a,'st_worry'))+row('Balance notes',aval(a,'balnote')))}
+ ${sect('Plan',row('Next step',aval(a,'next'))+row('Short-term goals',aval(a,'stg'))+row('Long-term goals',aval(a,'ltg'))+row('Treatment plan',aval(a,'tx'))+row('Sessions per month',aval(a,'sessions'))+row('Precautions',aval(a,'prec'))+row('Notes',aval(a,'notes')))}
+ <div class="no-print" style="margin-top:10px"><button class="btn sm" data-act="asOpen" data-id="${esc(x.id)}">Open full assessment</button></div></article>`}
+VIEWS.assessments=()=>{const A=all('assessment'),f=ui.asFilter||'all',file=ui.asView==='file';
+ const cl=sortClients(all('client').filter(c=>A.some(a=>a.clientId===c.id)));
+ const L=A.filter(a=>f==='all'||a.clientId===f).sort((a,b)=>{const ca=get(a.clientId),cb=get(b.clientId);return(ca&&cb?ordCmp(ca,cb):0)||(a.date<b.date?-1:a.date>b.date?1:0)});
+ const chips=`<div class="chips no-print"><button class="chip ${f==='all'?'on':''}" data-act="asFilt" data-f="all">All clients</button>${cl.map(c=>`<button class="chip ${f===c.id?'on':''}" data-act="asFilt" data-f="${c.id}">${esc(c.name)}</button>`).join('')}</div>`;
+ const head=`<header class="top no-print"><div style="display:flex;gap:12px;align-items:center"><button class="icon-btn lg" data-act="asBack" aria-label="Back">${ic('back')}</button><div><div class="eyebrow">${L.length} assessment${L.length===1?'':'s'}</div><h1>${file?'Combined file':'Assessments'}</h1></div></div>
+  <div style="display:flex;gap:8px">${file?`<button class="btn" data-act="asList">📋 List</button><button class="btn primary" data-act="asPrint">🖨 Print / PDF</button>`:`<button class="btn primary" data-act="asFile">📄 Combined file</button>`}</div></header>`;
+ if(!A.length)return head+emptyBig('📋','No assessments yet','Open a client and tap “New assessment”. Every completed assessment will appear here.');
+ if(file){let last='';return head+chips+`<div class="print-title"><h2>Cherub’s OS · Assessments</h2><div class="muted sm">${f==='all'?'All clients':esc((get(f)||{}).name||'')} · printed ${fmtLongDate(today())}</div></div>`+
+  L.map(x=>{const c=get(x.clientId)||{};const h=c.id!==last?`<h2 class="as-client">${esc(c.name||'Client')}</h2>`:'';last=c.id;return h+asDoc(x)}).join('')}
+ let last='';return head+chips+`<div class="card list-card">${L.map(x=>{const c=get(x.clientId)||{},sc=x.score||{};const h=c.id!==last&&f==='all'?`<div class="group-h" style="margin-top:12px">${esc(c.name||'Client')}</div>`:'';last=c.id;
+  return h+`<div class="tx" data-act="asOpen" data-id="${esc(x.id)}"><span class="em">📋</span><div class="grow"><div class="row-t">${esc(c.name||'')} · ${esc(x.visit||'Assessment')}</div><div class="muted sm">${fmtLongDate(x.date)} · AMBLE ${sc.amble==null?'–':Math.round(sc.amble)}</div></div><span class="a" style="color:${scoreCol(sc.amble)}">${sc.amble==null?'–':Math.round(sc.amble)}</span></div>`}).join('')}</div>`};
 VIEWS.prefs=()=>{
  const p=prefs();
  return`<header class="top"><div><div class="eyebrow">Cherub’s OS</div><h1>Settings</h1></div></header><div class="prefs">
@@ -711,6 +753,8 @@ VIEWS.prefs=()=>{
  <label class="fld half"><span>Look</span><select data-ch="pref" data-k="theme">${[['auto','Auto (day / night from phone)'],['day','Day — soft sand'],['night','Night — warm espresso']].map(([v,l])=>`<option value="${v}" ${(p.theme==='light'?'auto':p.theme)===v?'selected':''}>${l}</option>`).join('')}</select></label>
  <label class="fld half"><span>Tomorrow’s sessions reminder at</span><input type="time" data-ch="pref" data-k="preview" value="${esc(p.preview||'21:00')}"></label>
  <label class="fld half"><span>Daily session check-in at</span><input type="time" data-ch="pref" data-k="checkin" value="${esc(p.checkin||'19:00')}"></label></section>
+ <section class="card pad"><h3>📋 Assessments</h3><div class="fld muted" style="font-weight:500">${all('assessment').length} completed assessment${all('assessment').length===1?'':'s'} across ${new Set(all('assessment').map(a=>a.clientId)).size} client${new Set(all('assessment').map(a=>a.clientId)).size===1?'':'s'}.</div>
+ <div class="fld" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="asLib">📋 View all assessments</button><button class="btn" data-act="asFile">📄 Open combined file</button></div></section>
  <section class="card pad"><h3>Notifications</h3><div class="fld muted" style="font-weight:500" id="pushState">${pushStateText()}</div>
  <div class="fld" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="pushOn">Turn on notifications</button><button class="btn" data-act="testPush">Send a test notification</button></div>
  <div class="fld muted" style="font-weight:500">You’ll get: 🌙 tomorrow’s sessions at ${esc(p.preview||'21:00')} the night before · ✓ the check-in at ${esc(p.checkin||'19:00')} (who’s still to mark) · 💰 Sunday advances · month-end fee · ⏰ payment follow-ups · 🎂 birthdays at 9 am · your reminders.</div>
@@ -806,7 +850,7 @@ function runSearch(q){q=q.trim().toLowerCase();const r=$('#sRes');if(!r)return;i
 function openItem(i){if(!i)return;closeModal();
  if(i.kind==='client'){ui.clientId=i.id;go('clients');if(ui.route==='clients')render()}else if(i.kind==='note'){ui.noteId=i.id;go('notes')}else if(i.kind==='page'){ui.pageId=i.id;go('pages')}
  else if(i.kind==='task')editTask(i);else if(i.kind==='reminder')editRem(i);else if(i.kind==='event')editEvent(i);else if(i.kind==='expense')editExp(i)}
-function openMore(){ui.checkinOpen=false;const m=$('#modal');const L=(r,i,l)=>`<a class="nav" href="#${r}">${ic(i)}${l}</a>`;m.innerHTML=`<div class="scrim" data-act="closeModal"></div><div class="sheet morelist">${L('clients','users','Clients')}${L('tasks','task','Tasks')}${L('calendar','cal','Schedule')}${L('reminders','bell','Reminders')}${L('pages','page','Pages')}<button class="nav" data-act="search">${ic('search')}Search</button>${L('prefs','gear','Settings')}</div>`;m.classList.add('open')}
+function openMore(){ui.checkinOpen=false;const m=$('#modal');const L=(r,i,l)=>`<a class="nav" href="#${r}">${ic(i)}${l}</a>`;m.innerHTML=`<div class="scrim" data-act="closeModal"></div><div class="sheet morelist">${L('clients','users','Clients')}${L('assessments','page','Assessments')}${L('tasks','task','Tasks')}${L('calendar','cal','Schedule')}${L('reminders','bell','Reminders')}${L('pages','page','Pages')}<button class="nav" data-act="search">${ic('search')}Search</button>${L('prefs','gear','Settings')}</div>`;m.classList.add('open')}
 
 // ---------- block editor ----------
 const curPage=()=>ui.pageId&&get(ui.pageId);
@@ -1290,6 +1334,12 @@ const VOICE_ACT={
 // ---------- events ----------
 function pushStateText(){if(!pushSupported())return /iPhone|iPad/.test(navigator.userAgent)&&!isStandalone()?'On iPhone, add Cherub to your Home Screen and open it from there to turn on notifications.':'This browser can’t show notifications.';const p=Notification.permission;return p==='granted'?'On ✓ — you’ll get the evening check-in, Sunday advances, month-end fee and your reminders.':p==='denied'?'Blocked. Allow notifications for Cherub in your device settings.':'Off. Tap the button to turn them on for this device.'}
 const ACT={...CLIENT_ACT,...VOICE_ACT,
+ asLib(){ui.asView='list';ui.asFilter='all';go('assessments')},
+ asFile(){ui.asView='file';if(ui.route!=='assessments')ui.asFilter='all';go('assessments');if(ui.route==='assessments')render()},
+ asList(){ui.asView='list';render()},
+ asFilt(el){ui.asFilter=el.dataset.f;render()},
+ asBack(){go('prefs')},
+ asPrint(){try{window.print()}catch(e){toast('Use your browser’s Share → Print to save as PDF')}},
  asNew(el){const c=get(el.dataset.id);if(c)openAssessment(c,null)},
  asOpen(el,e){if(e&&e.target.closest('[data-act=asDel]'))return;const a=get(el.dataset.id);const c=a&&get(a.clientId);if(c)openAssessment(c,a)},
  asDel(el,e){if(e)e.stopPropagation();if(!el.dataset.armed){el.dataset.armed=1;toast('Tap the bin again to delete this assessment');setTimeout(()=>{delete el.dataset.armed},3000);return}remove(el.dataset.id);toast('Assessment deleted')},
