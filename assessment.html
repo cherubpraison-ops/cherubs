@@ -326,7 +326,7 @@ function special(it){
  case'steadihead':return`<div class="legendline" style="margin-bottom:8px"><b>CDC STEADI – Three Key Questions.</b> A “Yes” to any question means increased fall risk.</div>`;
  case'psfs':return`<div class="legendline" style="margin-bottom:8px"><b>Daily activities</b> · ask her about every activity, one by one.</div>
   <div class="q"><div class="ql"><span>“How easy is it for you to…”</span><em>Easy · Difficult · Painful · Can't</em></div>
-  ${PSQ.map((a,i)=>`<div class="tr"><div class="nm">${esc(a)}<span class="lastv" data-last="pa_${i+1}"></span></div>${edo('pa_'+(i+1))}</div><div class="fwhere hidden" data-fwp="${i+1}"><div class="note" style="margin-bottom:6px">Where does it hurt / what limits it?</div><div class="opts">${WHERE.map(w=>ob('pw_'+(i+1),'multi',w,w)).join('')}</div><input type="text" class="qnote" data-k="pn_${i+1}" placeholder="Notes" maxlength="200"></div>`).join('')}
+  ${PSQ.map((a,i)=>`<div class="tr"><div class="nm">${esc(a)}<span class="lastv" data-last="pa_${PSQ_ID[i]}"></span></div>${edo('pa_'+PSQ_ID[i])}</div><div class="fwhere hidden" data-fwp="${PSQ_ID[i]}"><div class="note" style="margin-bottom:6px">Where does it hurt / what limits it?</div><div class="opts">${WHERE.map(w=>ob('pw_'+PSQ_ID[i],'multi',w,w)).join('')}</div><input type="text" class="qnote" data-k="pn_${PSQ_ID[i]}" placeholder="Notes" maxlength="200"></div>`).join('')}
   ${[1,2].map(i=>`<div class="tr"><div><input type="text" data-k="ps_t${i}" placeholder="+ Other activity (optional)" maxlength="120"><span class="lastv" data-last="ps_s${i}"></span></div>${edo('ps_s'+i)}</div>`).join('')}
   <div class="note" style="margin-top:8px">If not Easy, choose where it hurts. Score: Easy 100 · Difficult 60 · Painful 30 · Can't 0, averaged.</div></div>`;
  case'stage4v':return`<div class="banner hidden" id="pauseBal">No consent: skip balance tests.</div><div class="q"><div class="ql"><span>CDC 4-Stage Balance Test<span class="lastv" data-last="stage4"></span></span><em>no support · eyes open · don’t move the feet</em></div>
@@ -371,7 +371,8 @@ const EDO=[['Easy','10','c1'],['Difficult','6','c2'],['Painful','3','c3'],["Can'
 const edLab=v=>(EDO.find(x=>x[1]===String(v))||[''])[0];
 function edo(k){return`<div class="opts">${EDO.map(([l,v,c])=>ob(k,'single',l,v,c)).join('')}</div>`}
 function psc(k){return`<div class="sc">${[...Array(11)].map((_,i)=>ob(k,'single',i,String(i),i<=3?'r':i<=6?'a':'g')).join('')}</div>`}
-const PSQ=['Sitting on the floor (puja / meals)','Using an Indian toilet','Squatting and getting up','Getting up from bed','Turning to look back while walking','Reaching a high shelf on tiptoe','Bending to pick something off the floor','Standing on one leg to dress','Hooking blouse behind back','Going down stairs without the rail','Carrying a tray while walking','Sitting cross-legged and getting up','Getting in and out of a car','Walking on uneven ground or in a crowd','Climbing stairs','Walking 30 minutes'];
+const PSQ_ID=[1,3,4,7,8,9,10,11,12,13,14,15,16];/* stable keys so older records still match */
+const PSQ=['Sitting on the floor (puja / meals)','Squatting and getting up','Getting up from bed','Bending to pick something off the floor','Standing on one leg to dress','Hooking blouse behind back','Going down stairs without the rail','Carrying a tray while walking','Sitting cross-legged and getting up','Getting in and out of a car','Walking on uneven ground or in a crowd','Climbing stairs','Walking 30 minutes'];
 const ABC6=['stand on your tiptoes and reach for something above your head?','stand on a chair and reach for something?','are bumped into by people as you walk through the mall?','step onto or off an escalator while you are holding onto a railing?','step onto or off an escalator while holding onto parcels such that you cannot hold onto the railing?','walk outside on icy sidewalks?'];
 const RTXT=['No restriction','Mild restriction','Moderate restriction','Full restriction'];
 function rowsOf(e,j){return JT[j].mv.map(m=>{const r=(e.rom||{})[m]||0,p=(e.mmt||{})[m]||'5';return r||p!=='5'?{m,r,p}:null}).filter(Boolean)}
@@ -639,7 +640,7 @@ function ageNum(){return parseInt(S.age)||55}
 function chairRef(){return ageNum()<60?18:15}
 function chairLow(){const a=ageNum();return a<60?14:a<65?12:a<70?11:10}
 function stageSecs(){if(!S.stage4)return null;const order=['Feet together','Semi-tandem','Tandem','Single leg'];if(S.stage4==='Unable')return Math.min(9.9,numv('stage_part')||0);const n=order.indexOf(S.stage4)+1;return 10*n+(n<4?Math.min(9.9,numv('stage_part')||0):0)}
-function psfsVals(){return[...PSQ.map((a,i)=>S['pa_'+(i+1)]),S.ps_s1,S.ps_s2].filter(v=>v!==undefined).map(Number)}
+function psfsVals(){return[...PSQ.map((a,i)=>S['pa_'+PSQ_ID[i]]),S.ps_s1,S.ps_s2].filter(v=>v!==undefined).map(Number)}
 function abcVals(){return[1,2,3,4,5,6].map(i=>S['abc_'+i]).filter(v=>v!==undefined).map(Number)}
 function compute(){
  const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));
@@ -656,7 +657,7 @@ function compute(){
  if(reMode()&&S.prev){const pj=S.prev.answers.jd||{};Object.keys(pj).filter(x=>hasData(pj[x])&&!hasData((S.jd||{})[x])).forEach(x=>F.push(['g',eName(x)+': resolved since last assessment']));Object.keys(S).filter(x=>x.startsWith('gr_')&&S[x]).forEach(x=>F.push([S[x]==='Not yet'?'a':'g',`Goal “${x.slice(3)}”: ${S[x].toLowerCase()}`]))}
  if(S.otherArea)F.push(['a','Other area: '+S.otherArea]);
  if(pains.length&&(S.ptype||[]).some(x=>x==='Tingling / numb'||x==='Radiating'))F.push(['a','Nerve-type symptoms: neuro screen']);
- PSQ.forEach((a,i)=>{const v=S['pa_'+(i+1)];if(v!==undefined&&+v<10){const wh=(S['pw_'+(i+1)]||[]).join(', '),nt=S['pn_'+(i+1)];F.push([v==='0'?'r':v==='3'?'a':'',`${a}: ${edLab(v).toLowerCase()}${wh?' · '+wh:''}${nt?' · '+nt:''}`])}});[1,2].forEach(i=>{const v=S['ps_s'+i];if(v!==undefined&&+v<10)F.push([v==='0'?'r':v==='3'?'a':'',`${S['ps_t'+i]||'Other activity'}: ${edLab(v).toLowerCase()}`])});
+ PSQ.forEach((a,i)=>{const v=S['pa_'+PSQ_ID[i]];if(v!==undefined&&+v<10){const wh=(S['pw_'+PSQ_ID[i]]||[]).join(', '),nt=S['pn_'+PSQ_ID[i]];F.push([v==='0'?'r':v==='3'?'a':'',`${a}: ${edLab(v).toLowerCase()}${wh?' · '+wh:''}${nt?' · '+nt:''}`])}});[1,2].forEach(i=>{const v=S['ps_s'+i];if(v!==undefined&&+v<10)F.push([v==='0'?'r':v==='3'?'a':'',`${S['ps_t'+i]||'Other activity'}: ${edLab(v).toLowerCase()}`])});
  const stY=['st_fall','st_unst','st_worry'].filter(k=>S[k]==='Yes');
  if(stY.length)F.push(['a',`STEADI screen positive: ${stY.map(k=>({st_fall:'fallen in past year'+(S.st_times?' ('+S.st_times+(S.st_inj==='Yes'?', injured':'')+')':''),st_unst:'feels unsteady',st_worry:'worries about falling'})[k]).join(' · ')}`]);
  if(S.stage4&&['Unable','Feet together','Semi-tandem'].includes(S.stage4))F.push(['a',`4-Stage Balance: cannot hold tandem 10 s → increased fall risk (CDC)`]);
@@ -693,7 +694,7 @@ function segDone(i){const s=SEGS[i];if(s.hiddenTab)return false;const has=k=>{co
   if(it.type==='bodymap')checks.push(doneSegs.has('pain-visited'));
   if(it.type==='hchange'&&reMode())checks.push(!!S.hchange);
   if(it.type==='prevbox'&&reMode())checks.push(!!S.prev);
-  if(it.type==='psfs')checks.push(PSQ.every((a,i)=>S['pa_'+(i+1)]!==undefined));
+  if(it.type==='psfs')checks.push(PSQ.every((a,i)=>S['pa_'+PSQ_ID[i]]!==undefined));
   if(it.type==='stage4v'&&!paused())checks.push(!!S.stage4);
   if(it.type==='chair'&&!paused())checks.push(S.chair!=null||S.chair_arms==='Yes');
   if(it.type==='func')checks.push(FUNC.every(([k])=>S['f_'+k]!==undefined));
