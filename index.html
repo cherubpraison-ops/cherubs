@@ -353,6 +353,15 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .kv{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
 .kl{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
 .kbox.ok .kv{color:var(--ok)}.kbox.bad .kv{color:var(--danger)}.kbox.warn .kv{color:var(--warn)}
+.asmt{margin-bottom:16px}
+.dl{font-size:11px;font-weight:700;margin-left:4px}.dl.up{color:var(--ok)}.dl.down{color:var(--danger)}
+.spark{display:flex;gap:8px;align-items:flex-end;height:110px;margin-top:14px;padding:6px 0;overflow-x:auto}
+.sb{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:42px;gap:4px}
+.sb i{display:block;width:22px;border-radius:6px 6px 2px 2px}.sb span{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.finds{margin:4px 0 0;padding-left:18px;font-size:14px;line-height:1.6}
+.amb-ov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column}
+.amb-bar{display:flex;gap:12px;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);background:var(--solid)}
+.amb-ov iframe{flex:1;border:0;width:100%;background:#fff}
 @media(max-width:900px){.cal-wrap,.money-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){
  .side{display:none}
@@ -790,7 +799,7 @@ function newPage(parent){const p={kind:'page',id:uid(),title:'',icon:'📄',pare
 // ---------- search & sheets ----------
 function openSearch(){ui.checkinOpen=false;const m=$('#modal');m.innerHTML=`<div class="scrim" data-act="closeModal"></div><div class="sheet srch"><input id="sIn" data-in="search" placeholder="Search everything…" autocomplete="off"><div class="sres" id="sRes"><div class="empty" style="padding:8px">Notes, pages, tasks, reminders, events and money.</div></div></div>`;m.classList.add('open');setTimeout(()=>$('#sIn').focus(),30)}
 function runSearch(q){q=q.trim().toLowerCase();const r=$('#sRes');if(!r)return;if(!q){r.innerHTML='';return}
- const hay=i=>i.kind==='client'?(i.name||'')+' '+(i.notes||'')+' '+(i.phone||''):i.kind==='session'||i.kind==='payment'||i.kind==='bill'?'':i.kind==='note'?i.title+' '+i.body:i.kind==='page'?i.title+' '+(i.blocks||[]).map(b=>b.x).join(' '):i.kind==='expense'?(i.note||'')+' '+(i.cat||'')+' '+i.amount:(i.title||'')+' '+(i.notes||'')+' '+(i.location||'');
+ const hay=i=>i.kind==='client'?(i.name||'')+' '+(i.notes||'')+' '+(i.phone||''):i.kind==='session'||i.kind==='payment'||i.kind==='bill'||i.kind==='assessment'?'':i.kind==='note'?i.title+' '+i.body:i.kind==='page'?i.title+' '+(i.blocks||[]).map(b=>b.x).join(' '):i.kind==='expense'?(i.note||'')+' '+(i.cat||'')+' '+i.amount:(i.title||'')+' '+(i.notes||'')+' '+(i.location||'');
  const res=[...Store.items.values()].filter(i=>i.kind!=='prefs'&&hay(i).toLowerCase().includes(q)).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,40);
  const lab=i=>i.kind==='client'?i.name:i.kind==='expense'?(i.note||i.cat)+' · '+money(i.amount):i.kind==='note'?(i.title||firstLine(i.body)||'New note'):(i.title||'Untitled');
  r.innerHTML=res.length?res.map(i=>`<div class="sr" data-act="openResult" data-id="${i.id}"><span class="k">${i.kind}</span><span class="grow ell">${esc(lab(i))}</span></div>`).join(''):'<div class="empty" style="padding:8px">Nothing found.</div>'}
@@ -998,6 +1007,41 @@ function clientCard(c){const m=clientMoney(c);return`<div class="card ccard ${c.
 function monthCalc(c,ym){const t=today(),end=lastDay(ym),r={planned:0,done:0,skip:0,moved:0,unmarked:0,todo:0,reasons:[]};
  for(let d=ym+'-01';d<=end;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{const st=stOf(x);if(st==='moved'){r.moved++;return}r.planned++;
   if(st==='done')r.done++;else if(st==='skip'){r.skip++;r.reasons.push({d,why:(x.s&&x.s.reason)||''})}else if(d<t)r.unmarked++;else r.todo++});return r}
+// ---------- AMBLE assessments ----------
+const AMB_HIST='amble_comb_history_v3',AMB_DRAFT='amble_comb_draft_v3';
+const assessOf=cid=>all('assessment').filter(a=>a.clientId===cid).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.savedAt||'').localeCompare(b.savedAt||''));
+const scoreCol=v=>v==null?'var(--muted)':v>=75?'var(--ok)':v>=50?'var(--warn)':'var(--danger)';
+function assessHtml(c){const L=assessOf(c.id),last=L[L.length-1],prev=L[L.length-2];
+ const sc=a=>(a&&a.score)||{},num=v=>v==null||v===''?'–':Math.round(v);
+ const delta=(k)=>{if(!last||!prev||sc(last)[k]==null||sc(prev)[k]==null)return'';const d=Math.round(sc(last)[k]-sc(prev)[k]);return d?`<span class="dl ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${Math.abs(d)}</span>`:''};
+ const parts=[['AMBLE score','amble'],['Function','function_psfs'],['Strength','strength'],['Pain','pain'],['Balance','balanceCoordination']];
+ const maxT=Math.max(100,...L.map(a=>+sc(a).amble||0));
+ return`<section class="card pad asmt"><div class="sec-h"><h3>Assessments</h3><span class="muted sm">${L.length?L.length+' saved':''}</span><span class="grow"></span><button class="btn sm primary" data-act="asNew" data-id="${c.id}">${ic('plus')}${L.length?'Re-assessment':'New assessment'}</button></div>
+ ${last?`<div class="kgrid">${parts.map(([l,k])=>`<div class="kbox"><div class="kv" style="color:${scoreCol(sc(last)[k])}">${num(sc(last)[k])}</div><div class="kl">${l} ${delta(k)}</div></div>`).join('')}</div>
+ ${L.length>1?`<div class="spark">${L.map(a=>`<div class="sb" title="${esc(a.date)} · ${num(sc(a).amble)}"><i style="height:${Math.max(4,(+sc(a).amble||0)/maxT*100)}%;background:${scoreCol(sc(a).amble)}"></i><span>${parseD(a.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>`).join('')}</div>`:''}
+ ${(last.findings||[]).length?`<div class="group-h" style="margin-top:12px">Latest findings</div><ul class="finds">${last.findings.slice(0,6).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
+ <div class="group-h" style="margin-top:12px">History</div>${L.slice().reverse().map(a=>`<div class="tx" data-act="asOpen" data-id="${esc(a.id)}"><span class="em">📋</span><div class="grow"><div class="row-t">${esc(a.visit||'Assessment')} · ${fmtLongDate(a.date)}</div><div class="muted sm">AMBLE ${num(sc(a).amble)} · Function ${num(sc(a).function_psfs)} · Strength ${num(sc(a).strength)} · Pain ${num(sc(a).pain)} · Balance ${num(sc(a).balanceCoordination)}</div></div><button class="icon-btn" data-act="asDel" data-id="${esc(a.id)}" title="Delete" aria-label="Delete">${ic('trash')}</button></div>`).join('')}`
+ :`<div class="empty">No assessments yet. Tap “New assessment” to do ${esc(c.name)}’s first one — name, date of birth and age are filled in for you.</div>`}</section>`}
+function seedAmbleHistory(c,key){try{const h=JSON.parse(localStorage.getItem(AMB_HIST)||'{}');
+ h[key]=assessOf(c.id).map(a=>{const sc=a.score||{};return{date:a.date,visit:a.visit||'',total:sc.amble,mob:sc.function_psfs,str:sc.strength,pain:sc.pain,bal:sc.balanceCoordination,raw:sc.raw,answers:a.record||{}}});
+ localStorage.setItem(AMB_HIST,JSON.stringify(h));localStorage.removeItem(AMB_DRAFT)}catch(e){}}
+function openAssessment(c,existing){
+ const L=assessOf(c.id),key=(c.cno||'').trim()||c.name;
+ const answers=existing?JSON.parse(JSON.stringify(existing.record||{})):{name:c.name,cid:c.cno||'',dob:c.dob||'',age:c.dob?String(ageOf(c.dob)):'',date:today(),visit:L.length?'Re-assessment':'Initial',jd:{}};
+ seedAmbleHistory(c,key);
+ ui.amb={cid:c.id,editing:existing?existing.id:null};
+ let ov=$('#ambOv');if(ov)ov.remove();
+ ov=document.createElement('div');ov.id='ambOv';ov.className='amb-ov';
+ ov.innerHTML=`<div class="amb-bar"><div class="grow"><b>${esc(c.name)}</b><div class="muted sm">${existing?'Viewing '+esc(existing.visit||'assessment')+' · '+fmtLongDate(existing.date):'New '+(L.length?'re-assessment':'assessment')} · tap <b>Save</b> inside the form to keep it</div></div><button class="btn" data-act="asClose">Done</button></div><iframe id="ambFrame" title="Assessment" src="assessment.html"></iframe>`;
+ document.body.appendChild(ov);
+ const fr=$('#ambFrame');fr.addEventListener('load',()=>{try{fr.contentWindow.postMessage({source:'amble-host',type:'load',record:{answers}},'*')}catch(e){}},{once:true})}
+window.addEventListener('message',e=>{const d=e.data;if(!d||d.source!=='amble'||d.type!=='saved'||!ui.amb)return;const fr=$('#ambFrame');if(!fr||e.source!==fr.contentWindow)return;
+ const c=get(ui.amb.cid);if(!c)return;const rec=d.record||{},a=rec.answers||{},date=a.date||today(),visit=a.visit||'Assessment';
+ const id='as_'+c.id+'_'+date+'_'+(visit==='Initial'?'i':'r');
+ if(ui.amb.editing&&ui.amb.editing!==id)remove(ui.amb.editing,true);ui.amb.editing=id;
+ put({kind:'assessment',id,clientId:c.id,date,visit,score:rec.score||{},findings:rec.findings||[],record:a,savedAt:rec.savedAt||new Date().toISOString(),created:(get(id)||{}).created||Date.now()});
+ if(a.cid&&a.cid!==c.cno){c.cno=a.cid;put(c,{silent:true})}
+ toast('Assessment saved to '+c.name+' ✓')});
 function calcHtml(c){const ym=ui.calcMonth||today().slice(0,7),k=monthCalc(c,ym);
  const box=(l,v,cls)=>`<div class="kbox ${cls||''}"><div class="kv">${v}</div><div class="kl">${l}</div></div>`;
  return`<section class="card pad calc"><div class="sec-h"><h3>Session calculator</h3><span class="grow"></span><button class="icon-btn" data-act="calcMove" data-n="-1" aria-label="Previous month">${ic('left')}</button><b class="sm">${monthLabel(ym)}</b><button class="icon-btn" data-act="calcMove" data-n="1" aria-label="Next month">${ic('right')}</button></div>
@@ -1016,6 +1060,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
  <div class="card stat"><div class="l">Total paid</div><div class="v">${money(m.paid)}</div></div><div class="card stat"><div class="l">${third[0]}</div><div class="v">${third[1]}</div></div></div>
  <div class="addbar" style="flex-wrap:wrap"><button class="btn primary" data-act="payClient" data-id="${c.id}">${ic('plus')}Record payment</button><button class="btn" data-act="pauseClient" data-id="${c.id}">${c.active===false?'Resume client':'Pause client'}</button>${c.phone?`<a class="btn" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a>`:''}</div>
  ${calcHtml(c)}
+ ${assessHtml(c)}
  <div class="money-grid"><section class="card pad"><div class="sec-h"><h3>Sessions</h3><span class="muted sm">last 30 days</span></div>${hist.length?hist.map(x=>sessRow(x,true)).join(''):'<div class="empty">No sessions yet.</div>'}
  ${next.length?`<div class="group-h" style="margin-top:14px">Coming up</div>${next.map(x=>`<div class="row-m" style="padding:3px 0">${dueLabel(x.date)}${x.s&&x.s.from?' · rescheduled':''}</div>`).join('')}`:''}</section>
  ${(()=>{const bs=allBills(c.id).slice(0,8);return bs.length?`<div class="group" style="grid-column:1/-1;margin:0"><div class="group-h">Bills</div><div class="bills">${bs.map(billBox).join('')}</div></div>`:''})()}
@@ -1245,6 +1290,10 @@ const VOICE_ACT={
 // ---------- events ----------
 function pushStateText(){if(!pushSupported())return /iPhone|iPad/.test(navigator.userAgent)&&!isStandalone()?'On iPhone, add Cherub to your Home Screen and open it from there to turn on notifications.':'This browser can’t show notifications.';const p=Notification.permission;return p==='granted'?'On ✓ — you’ll get the evening check-in, Sunday advances, month-end fee and your reminders.':p==='denied'?'Blocked. Allow notifications for Cherub in your device settings.':'Off. Tap the button to turn them on for this device.'}
 const ACT={...CLIENT_ACT,...VOICE_ACT,
+ asNew(el){const c=get(el.dataset.id);if(c)openAssessment(c,null)},
+ asOpen(el,e){if(e&&e.target.closest('[data-act=asDel]'))return;const a=get(el.dataset.id);const c=a&&get(a.clientId);if(c)openAssessment(c,a)},
+ asDel(el,e){if(e)e.stopPropagation();if(!el.dataset.armed){el.dataset.armed=1;toast('Tap the bin again to delete this assessment');setTimeout(()=>{delete el.dataset.armed},3000);return}remove(el.dataset.id);toast('Assessment deleted')},
+ asClose(){const ov=$('#ambOv');if(ov)ov.remove();ui.amb=null;try{localStorage.removeItem(AMB_DRAFT)}catch(e){}render()},
  closeModal,search:openSearch,more:openMore,
  qc(el){quick(el.dataset.k,$('#qcIn').value.trim())},
  toggleTask(el){const t=get(el.dataset.id);if(!t)return;t.done=!t.done;t.doneAt=t.done?Date.now():null;put(t);if(t.done)toast('Done ✓')},
@@ -1280,7 +1329,7 @@ const ACT={...CLIENT_ACT,...VOICE_ACT,
  copyExport(){const ta=$('#exportTa');navigator.clipboard.writeText(ta.value).then(()=>toast('Backup copied')).catch(()=>{ta.focus();ta.select();toast('Selected — use your Copy command')})},
  doImport(){let arr;try{arr=JSON.parse($('#importTa').value)}catch(e){toast('That doesn’t look like a backup');return}
   if(!Array.isArray(arr)){toast('That doesn’t look like a backup');return}
-  const kinds=['note','page','task','reminder','event','expense','prefs','client','session','payment','bill'];
+  const kinds=['note','page','task','reminder','event','expense','prefs','client','session','payment','bill','assessment'];
   const items=arr.filter(i=>i&&kinds.includes(i.kind)).map(i=>({...i,id:i.kind==='prefs'?'prefs':(/^[A-Za-z0-9_\-.~:@+]{1,120}$/.test(i.id||'')?i.id:uid())}));
   toast('Restoring '+items.length+' items…');bulk(items).then(()=>toast('Restored '+items.length+' items'))},
  eraseAll(el){if(!el.dataset.armed){el.dataset.armed=1;el.textContent='Tap again to erase ALL data';setTimeout(()=>{if(el.isConnected){delete el.dataset.armed;el.textContent='Erase everything'}},4000);return}

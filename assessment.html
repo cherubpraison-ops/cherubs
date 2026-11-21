@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMBLE · Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f2d2b;--muted:#7a8683;--soft:#f2f5f4;--line:#e6ebe9;--bg:#fafbfa;--pri:#2c5a52;--pri-soft:#e5efec;--amb:#d4923a;--amb-soft:#fbf3e7;--ok:#3f8a5a;--ok-soft:#e8f4ec;--bad:#c0503f;--bad-soft:#fcefed;--y:#e9c46a;--o:#e08a3c}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+.hd{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.97);border-bottom:1px solid var(--line)}
+.hd-in{max-width:900px;margin:0 auto;padding:10px 16px 0}
+.hd-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.word{font-family:Georgia,"Times New Roman",serif;font-size:25px;letter-spacing:.05em;color:#1f3d38}
+.hd-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.clock{font-variant-numeric:tabular-nums;font-weight:600;padding:3px 9px;border-radius:12px;background:var(--pri-soft);color:var(--pri)}
+.clock.warn{background:var(--amb-soft);color:#9a6420}.clock.over{background:var(--bad-soft);color:var(--bad)}
+.link{background:none;border:0;color:var(--pri);font-weight:600;cursor:pointer;padding:4px 2px}
+.tabs{display:grid;grid-template-columns:repeat(7,1fr);margin-top:6px;position:relative}
+.tabs::before{content:"";position:absolute;left:7%;right:7%;top:20px;height:2px;background:var(--line)}
+.tabs button{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 2px 9px;font-size:11.5px;color:var(--muted);cursor:pointer;line-height:1.2;text-align:center;border-bottom:2px solid transparent}
+.tabs .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--line);font-size:11.5px;font-weight:700;color:var(--muted);transition:transform .25s}
+.tabs button.cur{color:var(--pri);font-weight:700;border-bottom-color:var(--pri)}
+.tabs button.cur .n{border-color:var(--pri);background:var(--pri);color:#fff}
+.tabs button.done .n{background:var(--ok);border-color:var(--ok);color:#fff}
+.tabs button.pop .n{transform:scale(1.25)}
+.curname{display:none}
+.wrap{max-width:900px;margin:0 auto;padding:18px 16px 110px}
+.seg-h{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 12px}
+.seg-h h2{font-size:21px;font-weight:600;margin:0}.seg-h span{font-size:12px;color:var(--muted)}
+.q{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.ql{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ql em{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.row2 .q{margin-bottom:0}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.o{border:0;background:var(--soft);border-radius:18px;padding:7px 13px;cursor:pointer;font-size:13px;min-height:34px;transition:background .12s,transform .08s}
+.o:active{transform:scale(.95)}
+.o.on{background:var(--pri);color:#fff}
+.o.oth{background:#fff;border:1px dashed #c9d2cf;color:var(--muted)}.o.oth.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.o.on.c1{background:var(--ok)}.o.on.c2{background:var(--amb)}.o.on.c3{background:var(--o)}.o.on.c4{background:var(--bad)}
+input[type=text],input[type=date],textarea{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;width:100%}
+input:focus,textarea:focus{outline:2px solid #2c5a5233;border-color:var(--pri)}
+.oth-in{margin-top:8px}textarea{min-height:54px;resize:vertical}
+.note{font-size:12px;color:var(--muted)}
+.banner{padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:8px;background:var(--bad-soft);color:var(--bad);font-weight:500}
+.tr{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--soft)}
+.tr:last-child{border-bottom:0}.tr .nm{font-weight:500}.tr .hw{font-size:11.5px;color:var(--muted)}
+/* measurements & score text */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.mf{border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff}
+.mf label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px}
+.mf .hw{font-size:11px;color:var(--muted);margin-top:4px}
+.mf .in{display:flex;align-items:center;gap:6px}
+.mf input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:15px;font-weight:600}
+.mf .u{font-size:12px;color:var(--muted)}
+.mf .chg{font-size:11.5px;font-weight:700;margin-top:4px}
+.calc{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:10px}
+.cbox{border-radius:12px;padding:12px;background:var(--soft)}
+.cbox .big{font-size:26px;font-weight:700;line-height:1.1}
+.cbox .lbl{font-size:12px;color:var(--muted)}
+.cbox .cat{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:10px;color:#fff;background:var(--muted)}
+.bx{font-size:11.5px;color:var(--muted);margin:3px 0 0}
+.legendline{font-size:12px;color:var(--muted);background:var(--soft);border-radius:8px;padding:6px 10px;margin-bottom:10px}
+/* re-assessment */
+.mode{display:none;margin-left:10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--amb);color:#fff;padding:3px 9px;border-radius:10px;vertical-align:4px}
+body.re .mode{display:inline-block}
+body.re .hd{border-bottom:2px solid var(--amb)}
+.lastv{font-size:11px;color:#9a6420;background:var(--amb-soft);border-radius:8px;padding:1px 7px;margin-left:6px;font-weight:500;white-space:nowrap}
+.lastv:empty{display:none}
+.prevline{font-size:12px;background:var(--amb-soft);color:#7a4f17;border-radius:8px;padding:6px 9px;margin-bottom:8px}
+.pv{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.jbox.res{border-left-color:var(--ok);background:var(--ok-soft)}
+.dl{font-size:11.5px;font-weight:700;margin-left:4px}
+.gr-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--soft)}
+.gr-row:last-child{border-bottom:0}
+@media(max-width:700px){.gr-row{grid-template-columns:1fr}}
+/* joint summary boxes */
+.jboxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-top:10px}
+.jbox{display:block;align-self:start;width:100%;text-align:left;border:1px solid var(--line);border-left:5px solid var(--y);border-radius:12px;padding:10px 12px;background:#fff;cursor:pointer;font-size:13px}
+.jbox.s2{border-left-color:var(--o)}.jbox.s3{border-left-color:var(--bad)}
+.jb-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.jb-h b{font-size:14px}
+.pb{white-space:nowrap;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--soft);color:var(--muted)}
+.pb.p1{background:#fdf3d6;color:#7a6212}.pb.p2{background:#fbe3cc;color:#9a4f12}.pb.p3{background:var(--bad);color:#fff}
+.jbox table{width:100%;border-collapse:collapse;font-size:12.5px}
+.jbox th{font-weight:500;color:var(--muted);font-size:11px;text-align:left;padding:3px 4px;border-bottom:1px solid var(--line)}
+.jbox td{padding:5px 4px;border-bottom:1px solid var(--soft)}
+.jbox tr:last-child td{border-bottom:0}.jbox td:first-child,.jbox td:last-child{white-space:nowrap}
+.jbox .ok{color:var(--muted);font-size:12px}
+.jbox .jn{margin-top:6px;font-size:12px;color:var(--ink);background:var(--soft);border-radius:8px;padding:5px 8px}
+.jbox .ed{font-size:11px;color:var(--pri);margin-top:6px;font-weight:600}
+.r1t{color:#8a6d16;font-weight:600}.r2t{color:#a3581c;font-weight:600}.r3t{color:var(--bad);font-weight:600}
+/* joint list */
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px}
+.jg{display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);border-radius:12px;padding:5px 6px 5px 8px;background:#fff}
+.jg span{font-weight:600;font-size:13px}.jgn{display:flex;align-items:center;gap:10px}.jibg{background:#f6f9f8;border-radius:10px;padding:3px;display:flex}.ji{flex:none;vertical-align:middle}.jb-h b,.jc-h h4{display:flex;align-items:center;gap:8px}
+.jg .sides{display:flex;gap:4px}
+.side{white-space:nowrap;border:0;background:var(--soft);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;min-width:58px;transition:all .15s}
+.side:active{transform:scale(.95)}
+.side.s1{background:#fdf3d6;color:#7a6212}.side.s2{background:#fbe3cc;color:#9a4f12}.side.s3{background:var(--bad);color:#fff}
+.side.cur{outline:2.5px solid var(--pri);outline-offset:1px}
+.side .dotc{display:inline-block;width:7px;height:7px;border-radius:50%;background:#9fc1b8;margin-right:5px;vertical-align:1px}
+.side.s1 .dotc{background:var(--y)}.side.s2 .dotc{background:var(--o)}.side.s3 .dotc{background:#fff}
+.fwhere{background:var(--soft);border-radius:10px;padding:10px;margin:0 0 8px}.fwhere .o{background:#fff}.fwhere .o.on{background:var(--pri)}
+.qnote{margin-top:8px;font-size:12.5px;padding:7px 10px!important}
+/* body map */
+.map{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start}
+.body svg{width:100%;height:auto;display:block}
+.dot{cursor:pointer}
+.dot .ring{fill:#fff;stroke:#9fc1b8;stroke-width:2.5;transition:all .2s}
+.dot .core{fill:#9fc1b8;transition:fill .2s}
+.dot:hover .ring{stroke:var(--pri)}
+.dot.s1 .core{fill:var(--y)}.dot.s1 .ring{stroke:var(--y)}
+.dot.s2 .core{fill:var(--o)}.dot.s2 .ring{stroke:var(--o)}
+.dot.s3 .core{fill:var(--bad)}.dot.s3 .ring{stroke:var(--bad)}
+.dot.cur .ring{stroke:var(--pri);stroke-width:4}
+.dot.cur .halo{opacity:1;animation:pulse 1.4s infinite}
+.halo{fill:none;stroke:var(--pri);stroke-width:2;opacity:0}
+@keyframes pulse{0%{r:13;opacity:.7}100%{r:24;opacity:0}}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.hint-box{border:1.5px dashed #cfdcd8;border-radius:14px;padding:22px 16px;text-align:center;color:var(--muted)}
+.hint-box b{display:block;color:var(--ok);font-size:15px;margin-bottom:4px}
+.jcard{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;animation:in .2s ease}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.jc-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.jc-h h4{margin:0;font-size:16px}
+.jc-sub{font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 6px;display:flex;justify-content:space-between}
+.pscale{display:flex;gap:3px;flex-wrap:wrap}
+.pscale button{border:0;width:30px;height:30px;border-radius:8px;background:var(--soft);cursor:pointer;font-size:12.5px;font-weight:600;transition:transform .08s}
+.pscale button:active{transform:scale(.9)}
+.pscale button.on{color:#fff}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px}
+.tile{position:relative;border:1.5px solid var(--line);border-radius:11px;padding:8px 9px 8px;background:#fff;cursor:pointer;text-align:left;min-height:58px;transition:all .15s;user-select:none}
+.tile:active{transform:scale(.97)}
+.tile .mv{font-weight:600;font-size:12.5px;display:block;padding-right:30px}
+.tile .st{font-size:11px;color:var(--muted)}
+.tile.r1{background:#fdf8e8;border-color:var(--y)}.tile.r2{background:#fdf0e4;border-color:var(--o)}.tile.r3{background:var(--bad-soft);border-color:var(--bad)}
+.tile.r1 .st{color:#8a6d16}.tile.r2 .st{color:#a3581c}.tile.r3 .st{color:var(--bad)}
+.mmt{position:absolute;top:6px;right:6px;border:0;border-radius:7px;background:var(--pri-soft);color:var(--pri);font-size:11px;font-weight:700;padding:3px 6px;cursor:pointer}
+.mmt.low{background:var(--amb-soft);color:#9a6420}.mmt.vlow{background:var(--bad-soft);color:var(--bad)}
+.jc-f{display:flex;gap:8px;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
+.chips-sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sum{border:0;border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer;text-align:left;background:var(--amb-soft);color:#7a4f17}
+.sum.s3{background:var(--bad-soft);color:var(--bad)}.sum.s1{background:#fdf8e8;color:#7a6212}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn.gh{background:#fff;color:var(--pri);border:1px solid #cfdcd8}.btn.sm{padding:6px 11px;font-size:12px;border-radius:8px}
+.btn.txt{background:none;color:var(--muted);padding:6px 4px;font-size:12px}
+/* results */
+.res{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center}
+.ring{position:relative;width:160px;height:160px}
+.ring .v{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .v span{font-size:42px;font-weight:700;line-height:1}.ring .v small{font-size:11px;color:var(--muted)}
+.bar{margin-bottom:9px}.bar .lb{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px}
+.bar .tk{height:8px;background:var(--soft);border-radius:6px;overflow:hidden}.bar .fl{height:100%;background:var(--pri);transition:width .3s}
+.band{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff}
+.focus{margin:0;padding-left:18px}.focus li{margin-bottom:3px;font-size:13px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.ft{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.97);border-top:1px solid var(--line);z-index:20}
+.ft-in{max-width:900px;margin:0 auto;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ft .pg{font-size:12px;color:var(--muted)}
+.pbar{height:3px;background:var(--soft)}.pbar div{height:100%;background:var(--ok);width:0;transition:width .3s}
+table.h{width:100%;border-collapse:collapse;font-size:12.5px}table.h th,table.h td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}table.h th{color:var(--muted);font-weight:500;font-size:11.5px}
+.up{color:var(--ok);font-weight:600}.dn{color:var(--bad);font-weight:600}
+.tag{font-size:10.5px;background:var(--pri-soft);color:var(--pri);padding:2px 6px;border-radius:8px;margin-left:3px}
+.toast{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50}.toast.show{opacity:1}
+@media(max-width:700px){.row2,.map{grid-template-columns:1fr}.body{max-width:240px;margin:0 auto}.res{grid-template-columns:1fr;justify-items:center}.tr{grid-template-columns:1fr;gap:6px}.tabs .tl{display:none}.tabs .n{width:24px;height:24px}.tabs::before{top:18px}.tabs button{padding:5px 0 6px}.curname{display:block;text-align:center;font-size:12.5px;font-weight:700;color:var(--pri);padding:0 0 8px}.o{padding:6px 11px;font-size:12.5px}}
+@media print{.hd,.ft,.toast,.no-print{display:none!important}.wrap{padding:0}.seg{display:block!important}.q,.jcard{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="hd"><div class="hd-in">
+  <div class="hd-row"><span><span class="word">amble</span><span style="font-size:11px;font-weight:700;color:var(--pri);background:var(--pri-soft);padding:3px 8px;border-radius:10px;margin-left:8px;vertical-align:4px">Validated core</span><span class="mode" id="modeBadge">Re-assessment</span></span>
+    <div class="hd-meta"><span id="pct">0%</span><span class="clock" id="clock">0:00</span><button class="link" id="progBtn" type="button">Progress</button></div></div>
+  <nav class="tabs" id="tabs"></nav><div class="curname" id="curname"></div>
+</div></header>
+<main class="wrap" id="form"></main>
+<footer class="ft"><div class="pbar"><div id="pfill"></div></div><div class="ft-in">
+  <button class="btn gh" id="prev" type="button">← Back</button><span class="pg" id="pgLabel"></span><button class="btn" id="next" type="button">Next →</button>
+</div></footer>
+<div class="toast" id="toast" role="status"></div>
+<input type="file" id="importFile" accept=".json,application/json" class="hidden">
+
+<script>
+'use strict';
+/* AMBLE Assessment v4 · self-contained, embeddable
+   API: window.Amble.getData() · setData(record) · reset() · score()
+   Events: document 'amble:change' / 'amble:saved'; in an iframe also parent.postMessage({source:'amble',type,record},'*')
+   Load from host: postMessage({source:'amble-host',type:'load',record},'*') */
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const SCHEMA='amble-assessment-combined/1',STORE='amble_comb_draft_v3',HIST='amble_comb_history_v3';
+
+/* ---------- joints ---------- */
+const JT={
+ neck:{c:1,n:'Neck',mv:['Flexion','Extension','Side flexion R','Side flexion L','Rotation R','Rotation L']},
+ uback:{c:1,n:'Upper back',mv:['Flexion','Extension','Rotation R','Rotation L']},
+ lback:{c:1,n:'Lower back',mv:['Flexion','Extension','Side flexion R','Side flexion L']},
+ shoulder:{n:'Shoulder',mv:['Flexion','Extension','Abduction','Adduction','Internal rotation','External rotation']},
+ elbow:{n:'Elbow',mv:['Flexion','Extension','Pronation','Supination']},
+ wrist:{n:'Wrist / hand',mv:['Flexion','Extension','Radial deviation','Ulnar deviation','Grip']},
+ hip:{n:'Hip',mv:['Flexion','Extension','Abduction','Adduction','Internal rotation','External rotation']},
+ knee:{n:'Knee',mv:['Flexion','Extension']},
+ ankle:{n:'Ankle / foot',mv:['Dorsiflexion','Plantarflexion','Inversion','Eversion']},
+};
+// front view: client's RIGHT is on the viewer's LEFT
+const DOTS=[['neck','C',150,84],['uback','C',150,128],['lback','C',150,196],
+ ['shoulder','R',106,104],['shoulder','L',194,104],['elbow','R',88,172],['elbow','L',212,172],['wrist','R',76,234],['wrist','L',224,234],
+ ['hip','R',129,244],['hip','L',171,244],['knee','R',125,334],['knee','L',175,334],['ankle','R',122,424],['ankle','L',178,424]];
+const RLAB=['No restriction','Mild','Moderate','Full restriction'];
+const MMTS=['5','4','3','2','1','0'];
+const sideName=s=>s==='R'?'Right':s==='L'?'Left':'';
+const eKey=(j,s)=>j+'|'+s;
+const eName=k=>{const[j,s]=k.split('|');return JT[j].n+(s==='C'?'':' ('+sideName(s)+')')};
+const L='stroke="#1f3d38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
+const F=`fill="#eef4f2" ${L}`, N=`fill="none" ${L}`;
+const HL=(x,y,rx=6,ry)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry||rx}" fill="#fbe6cc"/>`;
+const RAYS=(x,y,r=9)=>{const a=[-35,0,35].map(d=>d*Math.PI/180);return a.map(t=>`<path d="M${(x+Math.cos(t)*r).toFixed(1)} ${(y+Math.sin(t)*r).toFixed(1)} l${(Math.cos(t)*3.2).toFixed(1)} ${(Math.sin(t)*3.2).toFixed(1)}" stroke="#d4923a" stroke-width="1.7" stroke-linecap="round"/>`).join('')};
+const ICON={
+ neck:`${HL(24,22,5.5,5)}<circle cx="24" cy="10" r="6.5" ${F}/><path d="M20.5 16 V24 M27.5 16 V24" ${N}/><path d="M7 40 C8 31 14 27 20.5 25 M27.5 25 C34 27 40 31 41 40" ${N}/><path d="M21.5 19.5 h5 M21.5 22.5 h5" stroke="#d4923a" stroke-width="1.7" stroke-linecap="round"/>${RAYS(24,21,8)}`,
+ uback:`${HL(24,22,6,5)}<path d="M20 11 C13 11 9 15 8 21 M20 20 C13 20 10 24 9 29 M28 11 C35 11 39 15 40 21 M28 20 C35 20 38 24 39 29" ${N}/><rect x="20" y="6" width="8" height="7" rx="2.2" ${F}/><rect x="20" y="15.5" width="8" height="7" rx="2.2" ${F}/><rect x="20" y="25" width="8" height="7" rx="2.2" ${F}/><rect x="20" y="34.5" width="8" height="7" rx="2.2" ${F}/><rect x="20" y="15.5" width="8" height="7" rx="2.2" fill="#fbe6cc" stroke="#d4923a" stroke-width="1.7"/>`,
+ lback:`${HL(24,19.5,8,3)}<rect x="17" y="4" width="14" height="9" rx="3" ${F}/><rect x="17" y="22" width="14" height="9" rx="3" ${F}/><path d="M18 19.5 h12" stroke="#d4923a" stroke-width="2.2" stroke-linecap="round"/><path d="M8 34 C11 44 20 45 24 45 C28 45 37 44 40 34 C34 37 28 35 24 39 C20 35 14 37 8 34 Z" ${F}/>${RAYS(24,19.5,10)}`,
+ shoulder:`${HL(27,17,8)}<path d="M5 11 C12 8 20 8 26 9" ${N}/><path d="M18 6 C15 12 15 20 18 27 C19 29 21 29 21.5 27" ${N}/><path d="M22 18.5 C22 13 25 10 29 10 C33 10 36 13 36 17 C36 20 34.5 22 33.5 24 L33 46 H25.5 L24 24.5 C22.8 23 22 21 22 18.5 Z" ${F}/>${RAYS(28,16,10)}`,
+ elbow:`${HL(23,27,7)}<path d="M9 3 L17 22 M16 2 L24 20" ${N}/><path d="M16 22 C13.5 26 15.5 31.5 20.5 32.8 C24 33.6 26.8 32 28 29.6 L45 24 V19 L30 24 C29.8 20.8 27 19 24 20 Z" ${F}/>${RAYS(22,27,10)}`,
+ wrist:`${HL(22,35,8,4)}<path d="M15 45 V36 C15 33 13 31 12 29 L8 22 C7 20 9 18 11 19.5 L15 24 V9 C15 7 18.5 7 18.5 9 V21 M18.5 8 C18.5 5 22 5 22 8 V21 M22 8.5 C22 6 25.5 6 25.5 8.5 V22 M25.5 11 C25.5 9 29 9 29 11 V27 C29 31 27.5 33 27.5 36 V45" ${F}/><path d="M15 36 H27.5" stroke="#d4923a" stroke-width="1.7" stroke-linecap="round"/>${RAYS(23,35,10)}`,
+ hip:`${HL(25,27,7)}<path d="M7 5 C16 1 26 4 27 13 C27.5 18 25 21 21 23 L15 25 C10 22 5 13 7 5 Z" ${F}/><circle cx="25" cy="27" r="5" ${F}/><path d="M28.5 30.5 C31 31 33 30 34 28.5 M29 31 L32 45 M21.5 31 C22 34 24 37 24.5 45" ${N}/>${RAYS(26,26,10)}`,
+ knee:`${HL(24,25,11,3.5)}<path d="M18 2 V13 C12 15 12 22 17.5 22.5 C20 22.7 21.5 20.5 24 20.5 C26.5 20.5 28 22.7 30.5 22.5 C36 22 36 15 30 13 V2" ${F}/><path d="M14 28.5 C14 26.5 34 26.5 34 28.5 C34 31 30 32 29.5 34 V46 M14 28.5 C14 31 18 32 18.5 34 V46" ${F}/><path d="M16 25 h16" stroke="#d4923a" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="2 2.5"/>${RAYS(24,25,13)}`,
+ ankle:`${HL(21,31,7)}<path d="M16 3 V27 C16 31 14 33 11.5 35.5 C8.5 38.5 9.5 44 14 44 H39.5 C43 44 44 40.5 41 38.5 L31 33.5 C28 32 26.5 30 26.5 26 V3 Z" ${F}/><circle cx="21" cy="31" r="2.2" fill="#d4923a"/>${RAYS(22,30,10)}`,
+};
+function jIcon(j,side,h=36){const flip=side==='L'?' transform="translate(48 0) scale(-1 1)"':'';return`<svg class="ji" viewBox="0 0 48 48" width="${h}" height="${h}" aria-hidden="true"><g${flip}>${ICON[j]}</g></svg>`}
+const eIcon=k=>{const[j,s]=k.split('|');return jIcon(j,s==='C'?null:s)};
+
+/* ---------- daily function & balance ---------- */
+const FUNC=[['reach','Reaching overhead','top shelf, hair, cupboard'],['bend','Bending to touch feet','footwear, picking up'],['floor','Sitting on the floor & getting up',''],['stairs','Climbing stairs',''],['hook','Hooking blouse',''],['cross','Sitting cross-legged',''],['car','Getting in & out of a car',''],['walk','Walking 30 minutes','park, mall, airport'],['bed','Pain getting out of bed','after sleep or long rest']];
+const WHERE=['Low back','Neck','Upper back','Shoulder','Hand / wrist','Hip','Knee','Heel / foot','Whole-body stiffness'];
+const FO=[['Easy',100,'c1'],['Difficult',60,'c2'],['Painful',30,'c3'],["Can't",0,'c4']];
+const LBAL=[['dress','Standing on one leg to dress','trousers, saree, footwear'],['uneven','Walking on uneven ground','garden, beach, cobbles'],['stairsnr','Stairs without holding the rail',''],['turn','Turning quickly / looking back while walking',''],['carry','Walking while carrying something','tray, bags, grandchild'],['escal','Escalator / stepping off a curb','']];
+const LO=[['Confident',100,'c1'],['Careful',60,'c2'],['Avoids',20,'c4'],['N/A','na','']];
+const STAGE=[['Feet together',25],['Semi-tandem',50],['Tandem',75],['Single leg',100],['Unable',0]];
+
+const SEGS=[
+ {id:'client',n:'Client',t:'30 sec',items:[
+  {row:[{k:'name',type:'text',l:'Client name',req:1},{k:'cid',type:'text',l:'Client No.',req:1,ph:'e.g. AMB-0231'}]},
+  {row:[{k:'dob',type:'date',l:'Date of birth'},{k:'age',type:'age',l:'Age',req:1}]},
+  {row:[{k:'date',type:'date',l:'Date'},{k:'visit',type:'single',l:'Assessment',o:['Initial','Re-assessment'],req:1}]},
+  {type:'prevbox'},
+  {row:[{k:'consent',type:'single',l:'Consent',o:['Yes','No'],req:1},{k:'assessor',type:'text',l:'Assessed by'}]},
+ ]},
+ {id:'health',n:'Health',t:'1 min',items:[{type:'hchange'},
+  {if:'hshow',k:'cond',type:'multi',ex:'None',l:'Past medical conditions',req:1,other:1,o:['None','High BP','Diabetes','Thyroid','Heart condition','Asthma','Osteoarthritis','Rheumatoid / autoimmune','Fracture history','Surgery history','Cancer history','Recent fall / injury','Anaemia / low Vit D']},
+  {if:'hshow',k:'meds',type:'multi',ex:'None',l:'Medication',other:1,o:['None','Painkillers','Blood thinners','Steroids','BP / heart','Diabetes','Thyroid','HRT','Calcium / Vit D']},
+  {if:'hshow',row:[{if:'hshow',k:'meno',type:'single',l:'Menopause',o:['Pre','Peri','Post','Post + HRT'],req:1,other:1},{if:'hshow',k:'activity',type:'single',l:'Activity level',o:['Low','Light','Moderate','High']}]},
+  {if:'hshow',k:'sleep',type:'single',l:'Sleep',o:['<5 h','5–6 h','6–7 h','7 h+']},
+ ]},
+ {id:'pain',n:'Pain & movement',t:'2–3 min',items:[{type:'bodymap'},
+  {row:[{k:'dur',type:'single',l:'Since',o:['< 2 wk','2–6 wk','6–12 wk','3–12 mo','1 yr +'],if:'pain'},{k:'trend',type:'single',l:'Getting',o:['Better','Same','Worse','Varies'],if:'pain'}],if:'pain'},
+  {k:'ptype',type:'multi',l:'Feels like',if:'pain',other:1,o:['Ache','Stiffness','Sharp','Burning','Tingling / numb','Radiating']},
+  {k:'worse',type:'multi',l:'Worse with',if:'pain',other:1,o:['Sitting','Standing','Walking','Stairs','Bending','Lifting','Overhead','Screen work','Flights','Morning','Night']},
+  {k:'posture',type:'multi',ex:'Neutral',l:'Posture',e:'optional',other:1,o:['Neutral','Forward head','Rounded shoulders','Upper-back stoop','Sway back','Knees inward','Flat feet']},
+ ]},
+ {id:'func',n:'Daily activities',t:'2 min',items:[{type:'psfs'}]},
+ {id:'balance',n:'Balance & strength',t:'3 min',items:[
+  {type:'steadihead'},
+  {k:'st_fall',type:'single',l:'Have you fallen in the past year?',o:['Yes','No'],req:1},
+  {if:'fell',row:[{k:'st_times',type:'single',l:'How many times?',o:['1','2 or more'],if:'fell'},{k:'st_inj',type:'single',l:'Were you injured?',o:['Yes','No'],if:'fell'}]},
+  {k:'st_unst',type:'single',l:'Do you feel unsteady when standing or walking?',o:['Yes','No'],req:1},
+  {k:'st_worry',type:'single',l:'Do you worry about falling?',o:['Yes','No'],req:1},
+  {type:'stage4v'},{type:'chair'},{type:'lbalhead'},{type:'lbal'},
+  {k:'balnote',type:'text',l:'Balance notes',e:'optional'},
+ ]},
+ {id:'body',n:'Measurements',t:'2 min',items:[{type:'measure'}]},
+ {id:'plan',n:'Plan',t:'1 min',items:[{type:'results'},{type:'greview'},
+  {k:'next',type:'single',l:'Next step',req:1,other:1,note:1,o:['Start programme','Focused assessment','Doctor review first','Imaging advised']},
+  {k:'stg',type:'multi',l:'Short-term goals',e:'first phase',other:1,note:1,o:['Reduce pain','Improve joint mobility','Improve muscle strength','Better balance & steadiness','Sleep without pain','Easier daily activities']},
+  {k:'ltg',type:'multi',l:'Long-term goals',e:'lifelong',other:1,note:1,o:['Pain-free daily living','Maintain mobility & flexibility','Maintain muscle & bone strength','Prevent falls','Travel comfortably','Stay active & independent for life']},
+  {k:'tx',type:'single',l:'Treatment plan',req:1,note:1,o:['Mobility training','Strength training','Both']},
+  {k:'sessions',type:'single',l:'Sessions per month',e:'ongoing',o:['12 · Mobility','12 · Strengthening','24 · Mobility 12 + Strengthening 12'],other:1},
+  {k:'prec',type:'multi',ex:'None',l:'Precautions',e:'above 65',if:'senior',o:['None','Low impact','Avoid painful range','Monitor BP','Fall risk','Bone health'],other:1},
+  {k:'notes',type:'textarea',l:'Notes',e:'optional'},
+  {type:'actions'},
+ ]},
+ {id:'progress',n:'Progress',t:'over time',hiddenTab:1,items:[{type:'progress'}]},
+];
+
+/* ---------- state ---------- */
+let S=fresh(),seg=0,startT=null,doneSegs=new Set();
+function fresh(){return{date:today(),jd:{},jcur:null}}
+const anyPain=()=>Object.values(S.jd||{}).some(e=>e.pain>0);
+const reMode=()=>S.visit==='Re-assessment';
+const IFS={fell:()=>S.st_fall==='Yes',pain:anyPain,re:reMode,hshow:()=>!reMode()||S.hchange==='Yes, update',senior:()=>parseInt(S.age)>65};
+const paused=()=>S.consent==='No';
+
+const MEAS=[['neck','Neck','around the middle of the neck'],['chest','Chest / bust','fullest part'],['arm_r','Upper arm (Right)','mid-arm, relaxed'],['arm_l','Upper arm (Left)','mid-arm, relaxed'],['fore_r','Forearm (Right)','thickest part, below the elbow'],['fore_l','Forearm (Left)','thickest part, below the elbow'],['waist','Waist','midway between lowest rib and top of hip bone'],['umb','Umbilical level','around the navel'],['hipc','Hip','widest part of the buttocks'],['thigh_r','Thigh (Right)','mid-thigh'],['thigh_l','Thigh (Left)','mid-thigh'],['calf_r','Calf (Right)','widest part'],['calf_l','Calf (Left)','widest part']];
+const numv=k=>{const v=parseFloat(S[k]);return isNaN(v)?null:v};
+function bmiInfo(){const h=numv('height'),w=numv('weight');if(!h||!w)return null;const b=w/((h/100)**2);
+ const c=b<18.5?['Underweight','var(--amb)']:b<23?['Normal','var(--ok)']:b<25?['Overweight','var(--amb)']:['Obese','var(--bad)'];return{b,cat:c[0],col:c[1]}}
+function mfield(k,l,h,u){return`<div class="mf"><label>${l}<span class="lastv" data-last="${k}"></span></label><div class="in"><input type="number" step="0.1" inputmode="decimal" data-k="${k}" placeholder="–"><span class="u">${u}</span></div>${h?`<div class="hw">${h}</div>`:''}<div class="chg" data-chg="${k}"></div></div>`}
+/* ---------- generic UI ---------- */
+function ob(k,t,label,v,cls=''){return`<button type="button" class="o ${cls}" data-k="${esc(k)}" data-t="${t}" data-v="${esc(v)}">${esc(label)}</button>`}
+function q(it){
+ const ifa=it.if?` data-if="${it.if}"`:'';
+ const lab=it.l?`<div class="ql"><span>${esc(it.l)}<span class="lastv" data-last="${it.k}"></span></span>${it.e?`<em>${esc(it.e)}</em>`:''}</div>`:'';
+ let b='';
+ if(it.type==='age')b=`<div class="lr" style="display:flex;align-items:center;gap:8px"><button type="button" class="o" data-age="-1" style="width:40px">−</button><input type="number" data-k="age" min="18" max="100" inputmode="numeric" placeholder="Years" style="width:110px;text-align:center;font-size:18px;font-weight:600"><button type="button" class="o" data-age="1" style="width:40px">+</button><span class="note">tap to type, or use − / +</span></div>`;
+ else if(it.type==='text')b=`<input type="text" data-k="${it.k}" maxlength="120"${it.ph?` placeholder="${esc(it.ph)}"`:''}>`;
+ else if(it.type==='date')b=`<input type="date" data-k="${it.k}">`;
+ else if(it.type==='textarea')b=`<textarea data-k="${it.k}" maxlength="2000"></textarea>`;
+ else{b=`<div class="opts">${it.o.map(o=>ob(it.k,it.type,o,o)).join('')}${it.other?ob(it.k,it.type,'+ Other','Other','oth'):''}</div>`;
+  if(it.other)b+=`<input type="text" class="oth-in hidden" data-k="${it.k}_other" data-oth="${it.k}" placeholder="Type other…" maxlength="200">`}
+ if(it.note)b+=`<input type="text" class="qnote" data-k="${it.k}_note" placeholder="Notes" maxlength="400">`;
+ return`<div class="q"${ifa}>${lab}${b}</div>`;
+}
+function rateRows(list,prefix,opts){return list.map(([k,n,h])=>`<div class="tr"><div><div class="nm">${n}<span class="lastv" data-last="${prefix}${k}"></span></div>${h?`<div class="hw">${h}</div>`:''}</div><div class="opts">${opts.map(([l,v,c])=>ob(prefix+k,'single',l,String(v),c)).join('')}</div></div>`).join('')}
+function special(it){
+ switch(it.type){
+ case'measure':return`<div class="q"><div class="ql"><span>Height & weight</span><em>BMI calculates itself</em></div><div class="mgrid">${mfield('height','Height','', 'cm')}${mfield('weight','Weight','','kg')}</div><div class="calc" id="calcBox"></div></div>
+   <div class="q"><div class="ql"><span>Body circumference</span><em>tape measure · cm</em></div><div class="mgrid">${MEAS.map(([k,l,h])=>mfield('m_'+k,l,h,'cm')).join('')}</div></div>`;
+ case'funchead':return`<div class="legendline" style="margin:14px 0 8px"><b>Indian daily activities</b> · clinical information, not part of the score. Based on Indian research on floor sitting, squatting, bending and toilet use.</div>`;
+ case'lbalhead':return`<div class="legendline" style="margin:14px 0 8px"><b>Balance in daily life</b> · clinical information, not part of the score.</div>`;
+ case'steadihead':return`<div class="legendline" style="margin-bottom:8px"><b>CDC STEADI – Three Key Questions.</b> A “Yes” to any question means increased fall risk.</div>`;
+ case'psfs':return`<div class="legendline" style="margin-bottom:8px"><b>Activity rating</b> · 0–10 scale from the PSFS (Stratford et al., 1995). Ask her about every activity, one by one.</div>
+  <div class="q"><div class="ql"><span>“How able are you to do this today?”</span><em>0 = unable to perform · 10 = able to perform at the same level as before the problem</em></div>
+  ${PSQ.map((a,i)=>`<div class="tr"><div class="nm">${esc(a)}<span class="lastv" data-last="pa_${i+1}"></span></div>${psc('pa_'+(i+1))}</div><div class="fwhere hidden" data-fwp="${i+1}"><div class="note" style="margin-bottom:6px">Where does it hurt / what limits it?</div><div class="opts">${WHERE.map(w=>ob('pw_'+(i+1),'multi',w,w)).join('')}</div><input type="text" class="qnote" data-k="pn_${i+1}" placeholder="Notes" maxlength="200"></div>`).join('')}
+  ${[1,2].map(i=>`<div class="tr"><div><input type="text" data-k="ps_t${i}" placeholder="+ Other activity (optional)" maxlength="120"><span class="lastv" data-last="ps_s${i}"></span></div>${psc('ps_s'+i)}</div>`).join('')}
+  <div class="note" style="margin-top:8px">Below 10, choose where it hurts. Score = average of all activities rated.</div></div>`;
+ case'stage4v':return`<div class="banner hidden" id="pauseBal">No consent: skip balance tests.</div><div class="q"><div class="ql"><span>CDC 4-Stage Balance Test<span class="lastv" data-last="stage4"></span></span><em>no support · eyes open · don’t move the feet</em></div>
+  <div class="note" style="margin-bottom:8px">Hold each position 10 s. If she holds it, go to the next; if not, stop. Tap the <b>highest position held for 10 s</b>.</div>
+  <div class="opts">${[['Feet together','c3'],['Semi-tandem','c2'],['Tandem','c1'],['Single leg','c1'],['Unable','c4']].map(([l,c])=>ob('stage4','single',l,l,c)).join('')}</div>
+  <div class="lr" style="margin-top:10px;display:flex;align-items:center;gap:8px"><span class="note">Seconds held in the next position (if she stopped early):</span><input type="number" data-k="stage_part" min="0" max="9.9" step="0.1" style="width:80px" placeholder="s"></div></div>`;
+ case'chair':return`<div class="q"><div class="ql"><span>30-Second Chair Stand<span class="lastv" data-last="chair"></span></span><em>CDC STEADI · Jones & Rikli</em></div>
+  <div class="note" style="margin-bottom:8px">Chair without arms against a wall · arms crossed on chest · count full stands in 30 s (more than halfway up at the end counts). If she must use her arms, stop and score 0.</div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="stp" style="display:inline-flex;align-items:center;gap:6px"><button type="button" class="o" data-step="chair:-1" style="width:38px">−</button><span id="chairV" style="min-width:40px;text-align:center;font-size:20px;font-weight:700">–</span><button type="button" class="o" data-step="chair:1" style="width:38px">+</button></div>
+  <button type="button" class="btn sm gh" id="chairT">30 s timer</button><span id="chairClock" style="font-weight:700;font-variant-numeric:tabular-nums"></span>${ob('chair_arms','single','Used arms → 0','Yes','flag')}</div></div>`;
+ case'abc6':return`<div class="q"><div class="ql"><span>ABC-6 · balance confidence</span><em>Peretz et al., 2006 · 0% = no confidence · 100% = completely confident</em></div>
+  <div class="note" style="margin-bottom:6px">“How confident are you that you will not lose your balance or become unsteady when you…” If she doesn’t do the activity, ask her to imagine how confident she would be.</div>
+  ${ABC6.map((t,i)=>`<div class="tr"><div class="nm">…${esc(t)}<span class="lastv" data-last="abc_${i+1}"></span></div><div class="sc">${[0,10,20,30,40,50,60,70,80,90,100].map(v=>ob('abc_'+(i+1),'single',v,String(v),v>=70?'g':v>=50?'a':'r')).join('')}</div></div>`).join('')}
+  <div class="note" style="margin-top:8px">ABC-6 score = average of the six ratings (%).</div></div>`;
+ case'prevbox':return`<div class="q" data-if="re" id="prevbox"></div>`;
+ case'hchange':return`<div class="q" data-if="re"><div class="ql"><span>Any change in health, medication or menopause since the last assessment?</span></div><div class="opts">${ob('hchange','single','No change','No change')}${ob('hchange','single','Yes, update','Yes, update')}</div><div class="note" style="margin-top:6px">“No change” keeps last time’s health details.</div></div>`;
+ case'greview':return`<div class="q" data-if="re" id="greview"></div>`;
+ case'bodymap':return`<div class="banner amb hidden" id="reJoint" style="background:var(--amb-soft);color:#7a4f17">Last assessment’s joints are pre-filled. Open each one and update what has changed, or tap “Reset to normal” if it’s now fine.</div><div class="q"><div class="ql"><span>Tap only the joint that has pain or restriction</span><em>untouched joints = normal</em></div>
+   <div class="jgrid" id="jgrid"></div>
+   <div id="jcard" style="margin-top:10px"></div><div class="chips-sum" id="jsum"></div>
+   <div style="margin-top:10px"><input type="text" data-k="otherArea" placeholder="+ Other area (jaw, ribs, toes…) — type here" maxlength="160"></div></div>`;
+ case'func':return`<div class="q"><div class="ql"><span>How easy is it for her to…</span><em>ask her, one by one</em></div>${FUNC.map(([k,n,h])=>`<div class="frow"><div class="tr"><div><div class="nm">${n}<span class="lastv" data-last="f_${k}"></span></div>${h?`<div class="hw">${h}</div>`:''}</div><div class="opts">${FO.map(([l,v,c])=>ob('f_'+k,'single',l,String(v),c)).join('')}</div></div><div class="fwhere hidden" data-fw="${k}"><div class="note" style="margin-bottom:6px">Where does it hurt / what limits it?</div><div class="opts">${WHERE.map(w=>ob('fw_'+k,'multi',w,w)).join('')}</div><input type="text" class="qnote" data-k="fn_${k}" placeholder="Notes" maxlength="200"></div></div>`).join('')}
+   <div class="tr"><div><input type="text" data-k="f_other_txt" placeholder="+ Other activity (type)" maxlength="80"></div><div class="opts">${FO.map(([l,v,c])=>ob('f_other','single',l,String(v),c)).join('')}</div></div></div>`;
+ case'stage':return`<div class="banner hidden" id="pauseBal">No consent: skip balance tests.</div><div class="q"><div class="ql"><span>Balance test · hold 10 s each<span class="lastv" data-last="stage4"></span></span><em>tap the highest she holds</em></div><div class="opts">${STAGE.map(([l,v])=>ob('stage4','single',l,l,v>=75?'c1':v>=50?'c2':v>0?'c3':'c4')).join('')}</div></div>`;
+ case'lbal':return`<div class="q"><div class="ql"><span>Balance & coordination in daily life</span><em>how does she manage…</em></div>${rateRows(LBAL,'lb_',LO)}</div>`;
+ case'results':return`<div class="banner hidden" id="pausePlan"></div><div class="q"><div class="res"><div class="ring"><svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="68" fill="none" stroke="#f0f3f2" stroke-width="11"/><circle id="ringF" cx="80" cy="80" r="68" fill="none" stroke="#2c5a52" stroke-width="11" stroke-linecap="round" stroke-dasharray="427" stroke-dashoffset="427" transform="rotate(-90 80 80)"/></svg><div class="v"><span id="tot">–</span><small>AMBLE score</small></div></div><div><div id="bandW" style="margin-bottom:8px"></div><div class="legendline">Each part comes from a published, validated test, converted to 0–100 (100 = best). The combined AMBLE index is in-house and under validation.</div>${[['mob','Function · activity rating'],['str','Strength · 30-s chair stand'],['pain','Pain · NPRS (100 = no pain)'],['bal','Balance · 4-Stage']].map(([k,l])=>`<div class="bar"><div class="lb"><span>${l}</span><b id="d_${k}">–</b></div><div class="tk"><div class="fl" id="f_${k}" style="width:0"></div></div><div class="bx" id="x_${k}"></div></div>`).join('')}<div class="note" id="vsLast"></div></div></div></div><details class="q" style="cursor:pointer"><summary style="font-weight:600;font-size:13px">Score basis (for doctors & investors)</summary><div class="note" style="margin-top:8px;line-height:1.6">
+<b>Function</b> = average of the activity ratings (0–10) × 10. The 0–10 scale is the PSFS scale (Stratford et al., 1995); the fixed activity list is AMBLE’s own, based on Indian research on floor sitting, squatting and toilet use.<br>
+<b>Strength</b> = 30-second chair stand ÷ reference × 100 (max 100). Reference: 18 stands under 60 (mean for women 51–60), 15 stands for 60+ (Rikli & Jones criterion standard for women 60–69). Used arms = 0.<br>
+<b>Pain</b> = 100 − (highest NPRS 0–10 × 10).<br>
+<b>Balance</b> = CDC 4-Stage Balance Test: seconds held out of 40, × 100/40. (The Indian ABC-H balance-confidence scale will be added once its published wording is available.)<br>
+<b>Fall-risk flags</b> follow CDC STEADI: any “Yes” on the Three Key Questions; cannot hold tandem 10 s; chair stand below average for age.<br>
+<b>AMBLE index</b> = simple average of the four parts. The parts are validated; the combined index is AMBLE’s own and is being validated on our clients.<br>
+The joint check (range, MMT), the Indian daily-activity questions, balance in daily life and body measurements are recorded for the clinical file but are not part of the index. Joint pain scores (NPRS) are.</div></details>
+<div class="q"><div class="ql"><span>Key findings</span><em>auto</em></div><div id="jfind"></div><ul class="focus" id="focus" style="margin-top:10px"></ul></div>`;
+ case'actions':return`<div class="acts no-print"><button type="button" class="btn" id="saveBtn">Save assessment</button><button type="button" class="btn gh" id="copyBtn">Copy summary</button><button type="button" class="btn gh" id="printBtn">Print / PDF</button><button type="button" class="btn gh" id="dlBtn">Download record</button><button type="button" class="btn gh" id="impBtn">Import</button><button type="button" class="btn gh" id="newBtn">New</button></div>`;
+ case'progress':return`<div class="q"><div class="ql"><span>Client</span><button type="button" class="btn sm gh" id="demoBtn">Load sample client</button></div><div class="opts" id="clientPick"></div></div><div class="q"><div id="chart"></div><div style="overflow-x:auto"><table class="h" id="hist"></table></div></div><p class="note">History is kept in this browser. In your app, store records on your server.</p>`;
+ }
+}
+function render(){
+ $('#tabs').innerHTML=SEGS.map((s,i)=>s.hiddenTab?'':`<button type="button" data-seg="${i}" id="tab_${s.id}"><span class="n">${i+1}</span>${s.n}</button>`).join('');
+ $('#form').innerHTML=SEGS.map((s,i)=>`<section class="seg${i?' hidden':''}" id="seg_${s.id}"><div class="seg-h"><h2>${s.n}</h2><span>${s.t}</span></div>${s.items.map(it=>it.row?`<div class="row2"${it.if?` data-if="${it.if}"`:''}>${it.row.map(q).join('')}</div>`:it.k?q(it):special(it)).join('')}</section>`).join('');
+}
+
+/* ---------- joint logic ---------- */
+function entry(k){S.jd[k]=S.jd[k]||{rom:{},mmt:{}};return S.jd[k]}
+function sev(e){if(!e)return 0;let s=0;const p=e.pain||0;if(p>=7)s=3;else if(p>=4)s=2;else if(p>0)s=1;
+ Object.values(e.rom||{}).forEach(v=>{s=Math.max(s,v)});Object.values(e.mmt||{}).forEach(v=>{const n=+v;s=Math.max(s,n<=2?3:n===3?2:n===4?1:0)});return s}
+function hasData(e){return e&&((e.pain||0)>0||Object.values(e.rom||{}).some(v=>v>0)||Object.values(e.mmt||{}).some(v=>v!=='5')||(e.note||'').trim())}
+function psc(k){return`<div class="sc">${[...Array(11)].map((_,i)=>ob(k,'single',i,String(i),i<=3?'r':i<=6?'a':'g')).join('')}</div>`}
+const PSQ=['Sitting on the floor (puja / meals)','Using an Indian toilet','Squatting and getting up','Getting up from bed','Turning to look back while walking','Reaching a high shelf on tiptoe','Bending to pick something off the floor','Standing on one leg to dress','Hooking blouse behind back','Going down stairs without the rail','Carrying a tray while walking','Sitting cross-legged and getting up','Getting in and out of a car','Walking on uneven ground or in a crowd','Climbing stairs','Walking 30 minutes'];
+const ABC6=['stand on your tiptoes and reach for something above your head?','stand on a chair and reach for something?','are bumped into by people as you walk through the mall?','step onto or off an escalator while you are holding onto a railing?','step onto or off an escalator while holding onto parcels such that you cannot hold onto the railing?','walk outside on icy sidewalks?'];
+const RTXT=['No restriction','Mild restriction','Moderate restriction','Full restriction'];
+function rowsOf(e,j){return JT[j].mv.map(m=>{const r=(e.rom||{})[m]||0,p=(e.mmt||{})[m]||'5';return r||p!=='5'?{m,r,p}:null}).filter(Boolean)}
+const PJ=()=>(reMode()&&S.prev&&S.prev.answers&&S.prev.answers.jd)||{};
+function prevPain(k){const pe=PJ()[k];return pe?` <span style="opacity:.8;font-weight:500">(was ${pe.pain||0})</span>`:''}
+function prevLine(k){const pe=PJ()[k];if(!reMode()||!S.prev)return'';if(!pe||!hasData(pe))return`<div class="prevline">Last time: normal</div>`;const rs=rowsOf(pe,k.split('|')[0]);return`<div class="prevline">Last time: ${pe.pain?'pain '+pe.pain+'/10':'no pain'}${rs.length?' · '+rs.map(x=>`${x.m} ${RTXT[x.r].toLowerCase()}${x.p!=='5'?', MMT '+x.p:''}`).join(' · '):''}</div>`}
+function entryRows(k){const e=S.jd[k],[j]=k.split('|');return JT[j].mv.map(m=>{const r=(e.rom||{})[m]||0,p=(e.mmt||{})[m]||'5';return r||p!=='5'?{m,r,p}:null}).filter(Boolean)}
+function entryBox(k,editable){const e=S.jd[k],rows=entryRows(k),pn=e.pain||0,pc=pn>=7?3:pn>=4?2:pn>0?1:0;
+ return`<${editable?'button type="button"':'div'} class="jbox s${Math.max(1,sev(e))}"${editable?` data-jopen="${esc(k)}"`:''}>
+  <div class="jb-h"><b>${eIcon(k)} ${esc(eName(k))}</b><span class="pb p${pc}">${pn?'Pain '+pn+'/10':'No pain'}${prevPain(k)}</span></div>
+  ${rows.length?`<table><tr><th>Movement</th><th>Range</th><th>Strength</th></tr>${rows.map(x=>`<tr><td>${esc(x.m)}</td><td class="${x.r?'r'+x.r+'t':''}">${RTXT[x.r]}</td><td class="${x.p!=='5'?(+x.p<=2?'r3t':+x.p===3?'r2t':'r1t'):''}">MMT ${x.p}/5</td></tr>`).join('')}</table>`:'<div class="ok">Range & strength normal</div>'}
+  ${e.note?`<div class="jn">${esc(e.note)}</div>`:''}${editable?'<div class="ed">Tap to edit</div>':''}
+ </${editable?'button':'div'}>`}
+function entryLines(k){const e=S.jd[k],rows=entryRows(k);return`${eName(k)} — ${e.pain?'Pain '+e.pain+'/10':'No pain'}`+(rows.length?rows.map(x=>`\n   • ${x.m}: ${RTXT[x.r].toLowerCase()}, MMT ${x.p}/5`).join(''):'\n   • Range & strength normal')+(e.note?`\n   • Note: ${e.note}`:'')}
+function entryText(k){const e=S.jd[k],[j]=k.split('|'),bits=[];
+ JT[j].mv.forEach(m=>{const r=(e.rom||{})[m]||0,p=(e.mmt||{})[m];if(r||p&&p!=='5')bits.push(`${m}${r?' '+RLAB[r].toLowerCase():''}${p&&p!=='5'?' MMT '+p:''}`)});
+ return`${eName(k)}${e.pain?` · pain ${e.pain}/10`:''}${bits.length?' · '+bits.join(', '):''}${e.note?' · '+e.note:''}`}
+const pcol=i=>i===0?'var(--ok)':i<=3?'#c9a53a':i<=6?'var(--o)':'var(--bad)';
+function renderCard(){
+ const k=S.jcur,box=$('#jcard');
+ if(!k){box.innerHTML=Object.keys(S.jd).filter(x=>hasData(S.jd[x])).length?'':`<div class="hint-box"><b>✓ All joints normal</b>Tap Right / Left on a joint to record pain, range or strength.</div>`}
+ else{const[j]=k.split('|'),e=entry(k);
+  box.innerHTML=`<div class="jcard"><div class="jc-h"><h4>${eIcon(k)} ${esc(eName(k))}</h4><button type="button" class="btn sm" data-jdone="1">✓ Done</button></div>
+   ${prevLine(k)}<div class="jc-sub"><span>Pain score</span><span>${e.pain?e.pain+'/10':'none'}</span></div>
+   <div class="pscale">${[...Array(11)].map((_,i)=>`<button type="button" data-jpain="${i}" class="${(e.pain||0)===i&&(i>0||e.pain===0)?'on':''}" style="${(e.pain||0)===i&&(i>0||e.pain===0)?'background:'+pcol(i):''}">${i}</button>`).join('')}</div>
+   <div class="jc-sub"><span>Movement · tap to grade restriction</span><span>badge = MMT, tap to lower</span></div>
+   <div class="tiles">${JT[j].mv.map(m=>{const r=(e.rom||{})[m]||0,p=(e.mmt||{})[m]||'5';return`<div class="tile r${r}" data-jmv="${esc(m)}" role="button" tabindex="0"><span class="mv">${esc(m)}</span><span class="st">${RLAB[r]}</span><button type="button" class="mmt ${+p<=2?'vlow':+p<=4?'low':''}" data-jmmt="${esc(m)}" title="MMT">MMT ${p}</button></div>`}).join('')}</div>
+   <input type="text" style="margin-top:10px" data-jnote="1" value="${esc(e.note||'')}" placeholder="Special tests / other findings (optional)" maxlength="300">
+   <div class="jc-f"><button type="button" class="btn txt" data-jreset="1">↺ Reset to normal</button><span class="note">Grades: None → Mild → Moderate → Full</span></div></div>`}
+ const list=Object.keys(S.jd).filter(x=>x!==k&&hasData(S.jd[x]));
+ const resolved=Object.keys(PJ()).filter(x=>hasData(PJ()[x])&&!hasData(S.jd[x])&&x!==k);
+ $('#jsum').innerHTML=(list.length||resolved.length)?`<div class="jboxes" style="width:100%">${list.map(x=>entryBox(x,1)).join('')}${resolved.map(x=>`<div class="jbox res"><div class="jb-h"><b>${eIcon(x)} ${esc(eName(x))}</b><span class="pb" style="background:var(--ok);color:#fff">✓ Resolved</span></div><div class="ok">Was pain ${PJ()[x].pain||0}/10 · now normal</div></div>`).join('')}</div>`:'';
+ $('#jgrid').innerHTML=Object.entries(JT).map(([j,J])=>{const sides=J.c?['C']:['R','L'];return`<div class="jg"><span class="jgn"><span class="jibg">${jIcon(j,null,38)}</span>${esc(J.n)}</span><div class="sides">${sides.map(sd=>{const key=eKey(j,sd),e=S.jd[key],cls=(hasData(e)?' s'+Math.max(1,sev(e)):'')+(key===k?' cur':'');return`<button type="button" class="side${cls}" data-dot="${key}"><i class="dotc"></i>${sd==='C'?'Select':sideName(sd)}</button>`}).join('')}</div></div>`}).join('');
+}
+function cleanEntries(){Object.keys(S.jd).forEach(k=>{if(k!==S.jcur&&!hasData(S.jd[k]))delete S.jd[k]})}
+
+/* ---------- sync ---------- */
+function syncUI(){
+ document.querySelectorAll('button[data-k]').forEach(b=>{const c=S[b.dataset.k],v=b.dataset.v;b.classList.toggle('on',b.dataset.t==='multi'?(c||[]).includes(v):c===v)});
+ document.querySelectorAll('input[data-k],textarea[data-k]').forEach(i=>{if(document.activeElement!==i)i.value=S[i.dataset.k]??''});
+ document.querySelectorAll('[data-oth]').forEach(i=>{const c=S[i.dataset.oth];i.classList.toggle('hidden',!(Array.isArray(c)?c.includes('Other'):c==='Other'))});
+}
+
+/* ---------- scoring ---------- */
+const avg=a=>{a=a.filter(x=>x!=null&&!isNaN(x));return a.length?a.reduce((s,x)=>s+x,0)/a.length:null};
+const clamp=x=>Math.max(0,Math.min(100,x));
+function compute(){
+ const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));
+ const pains=E.map(([k,e])=>e.pain||0).filter(p=>p>0),maxP=pains.length?Math.max(...pains):0;
+ const pain=clamp(100-maxP*10);
+ const romS=E.length?avg(E.map(([k,e])=>{const[j]=k.split('|');return avg(JT[j].mv.map(m=>[100,70,40,0][(e.rom||{})[m]||0]))})):100;
+ const mmtS=E.length?avg(E.map(([k,e])=>{const[j]=k.split('|');return avg(JT[j].mv.map(m=>({'5':100,'4':80,'3':60,'2':40,'1':20,'0':0})[(e.mmt||{})[m]||'5']))})):100;
+ const fv=[...FUNC.map(([k])=>S['f_'+k]),S.f_other].filter(v=>v!==undefined).map(Number);
+ const fun=avg(fv);
+ const mob=avg([romS,fun]),str=mmtS;
+ const lb=LBAL.map(([k])=>S['lb_'+k]).filter(v=>v!==undefined&&v!=='na').map(Number);
+ const st=S.stage4?STAGE.find(x=>x[0]===S.stage4)[1]:null;
+ const conf={'Very steady':100,'Mostly':75,'Sometimes unsteady':40,'Fear of falling':10}[S.balconf];
+ const bal=avg([st,conf,avg(lb)]);
+ const parts=[mob,str,pain,bal].filter(x=>x!=null);
+ const total=parts.length?avg(parts):null;
+ const F=[],oth=k=>S[k+'_other']||'Other';
+ if(S.consent==='No')F.push(['r','No consent: defer assessment']);
+ E.sort((a,b)=>sev(b[1])-sev(a[1])).forEach(([k,e])=>F.push(['j',entryLines(k),k]));
+ if(reMode()&&S.prev){const pj=S.prev.answers.jd||{};Object.keys(pj).filter(x=>hasData(pj[x])&&!hasData((S.jd||{})[x])).forEach(x=>F.push(['g',eName(x)+': resolved since last assessment']));Object.keys(S).filter(x=>x.startsWith('gr_')&&S[x]).forEach(x=>F.push([S[x]==='Not yet'?'a':'g',`Goal “${x.slice(3)}”: ${S[x].toLowerCase()}`]))}
+ {const bi=bmiInfo();if(bi&&bi.cat!=='Normal')F.push(['a',`BMI ${bi.b.toFixed(1)} · ${bi.cat.toLowerCase()} (Indian cut-offs)`]);const w=numv('m_waist');if(w&&w>=80)F.push(['a',`Waist ${w} cm · above 80 cm`]);}
+ if(S.otherArea)F.push(['a','Other area: '+S.otherArea]);
+ if(pains.length&&(S.ptype||[]).some(x=>x==='Tingling / numb'||x==='Radiating'))F.push(['a','Nerve-type symptoms: neuro screen']);
+ if(S.balconf==='Fear of falling'||S.balconf==='Sometimes unsteady')F.push(['a','Feels '+S.balconf.toLowerCase()]);
+ if(S.falls&&S.falls!=='None')F.push(['a','Falls in last year: '+(S.falls==='Other'?oth('falls'):S.falls)]);
+ if(S.stage4&&['Unable','Feet together','Semi-tandem'].includes(S.stage4))F.push(['a',`Balance test: highest ${S.stage4.toLowerCase()} → fall risk`]);
+ LBAL.forEach(([k,n])=>{const v=S['lb_'+k];if(v==='20')F.push(['a',n+': avoids']);else if(v==='60')F.push(['',n+': careful'])});
+ return{mob,str,pain,bal,fun,total,F,raw:{maxPain:maxP,joints:E.length,bmi:(bmiInfo()||{}).b,weight:numv('weight'),waist:numv('m_waist')}};
+}
+const band=t=>['In-house index · under validation','#7a8683'];
+const f0=x=>x==null?'–':Math.round(x);
+
+/* ---------- completion ---------- */
+function vis(it){return!it.if||IFS[it.if]()}
+function segDone(i){const s=SEGS[i];if(s.hiddenTab)return false;const has=k=>{const v=S[k];return Array.isArray(v)?v.length>0:v!==undefined&&v!==''};
+ const checks=[];
+ s.items.forEach(it=>{(it.row||[it]).forEach(x=>{if(x.req&&vis(x))checks.push(has(x.k))});
+  if(it.type==='bodymap')checks.push(doneSegs.has('pain-visited'));
+  if(it.type==='hchange'&&reMode())checks.push(!!S.hchange);
+  if(it.type==='prevbox'&&reMode())checks.push(!!S.prev);
+  if(it.type==='func')checks.push(FUNC.every(([k])=>S['f_'+k]!==undefined));
+  if(it.type==='stage'&&!paused())checks.push(!!S.stage4);
+  if(it.type==='measure')checks.push(numv('height')!=null&&numv('weight')!=null);
+  if(it.type==='lbal')checks.push(LBAL.filter(([k])=>S['lb_'+k]!==undefined).length>=3)});
+ return checks.length?{d:checks.filter(Boolean).length,t:checks.length}:{d:0,t:0}}
+
+/* ---------- re-assessment ---------- */
+const histKey=()=>((S.cid||'').trim()||(S.name||'').trim());
+function recordsFor(){const h=hist(),k=histKey();const own=h[k]||[];return own.filter(x=>!(x.date===S.date&&x.visit===S.visit)).slice().reverse()}
+const CARRY=['ps_t1','ps_t2','ps_t3','ps_t4','ps_t5','name','cid','dob','age','height','cond','cond_other','meds','meds_other','meno','meno_other','activity','sleep','posture','posture_other','dur','ptype','ptype_other','worse','worse_other','stg','stg_other','ltg','ltg_other','tx','tx_other','sessions','sessions_other','otherArea'];
+function loadPrev(rec){const a=JSON.parse(JSON.stringify(rec.answers||{}));
+ S.prev={date:rec.date,visit:rec.visit,total:rec.total,mob:rec.mob,str:rec.str,pain:rec.pain,bal:rec.bal,answers:a};
+ CARRY.forEach(k=>{const cur=S[k];if((cur===undefined||cur===''||(Array.isArray(cur)&&!cur.length))&&a[k]!==undefined)S[k]=JSON.parse(JSON.stringify(a[k]))});
+ if(!Object.keys(S.jd||{}).length&&a.jd)S.jd=JSON.parse(JSON.stringify(a.jd));
+ toast('Previous assessment loaded: '+rec.date)}
+function lastLabel(k,v){if(v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length))return'';
+ if(k.startsWith('f_')&&k!=='f_other_txt'){const x=FO.find(o=>String(o[1])===v);return x?x[0]:''}
+ if(k.startsWith('lb_')){const x=LO.find(o=>String(o[1])===v);return x?x[0]:''}
+ return Array.isArray(v)?v.join(', '):String(v)}
+function renderRe(){
+ document.body.classList.toggle('re',reMode());
+ if(!reMode())return;
+ const pb=$('#prevbox');
+ if(S.prev)pb.innerHTML=`<div class="ql"><span>✓ Comparing with ${esc(S.prev.visit||'assessment')} of ${esc(S.prev.date)}</span><button type="button" class="btn sm gh" data-prevclear="1">Change</button></div><div class="note">Score then: ${f0(S.prev.total)} · Mobility ${f0(S.prev.mob)} · Strength ${f0(S.prev.str)} · Pain ${f0(S.prev.pain)} · Balance ${f0(S.prev.bal)}</div>`;
+ else{const recs=recordsFor();
+  pb.innerHTML=`<div class="ql"><span>Load her previous assessment</span><em>by Client No.</em></div>`+(histKey()?'':'<div class="note">Enter the Client No. above first.</div>')+
+   (recs.length?`<div class="pv">${recs.map((r,i)=>`<button type="button" class="o" data-prevload="${i}">${esc(r.visit||'Assessment')} · ${esc(r.date)} · score ${f0(r.total)}</button>`).join('')}</div>`:(histKey()?`<div class="note">No saved assessment for “${esc(histKey())}” on this device.</div>`:''))+
+   `<div class="pv"><button type="button" class="btn sm gh" data-previmport="1">Import previous record file</button></div>`}
+ const goals=[...((S.prev&&S.prev.answers.stg)||[]),...((S.prev&&S.prev.answers.ltg)||[])].filter(g=>g!=='Other');
+ const gr=$('#greview');
+ gr.innerHTML=S.prev&&goals.length?`<div class="ql"><span>Goals from last assessment</span><em>how is she doing?</em></div>${goals.map(g=>`<div class="gr-row"><span>${esc(g)}</span><div class="opts">${[['Achieved','c1'],['Improving','c2'],['Not yet','c4']].map(([l,c])=>ob('gr_'+g,'single',l,l,c)).join('')}</div></div>`).join('')}`:(S.prev?'<div class="note">No goals were recorded last time.</div>':'<div class="note">Load the previous assessment on the Client page to review goals.</div>');
+}
+function explain(){
+ const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));
+ const restricted=E.filter(([k,e])=>Object.values(e.rom||{}).some(v=>v>0)).map(([k])=>eName(k));
+ const fa=FUNC.filter(([k])=>S['f_'+k]!==undefined),hard=fa.filter(([k])=>S['f_'+k]!=='100');
+ let minM=5,minW='';E.forEach(([k,e])=>Object.entries(e.mmt||{}).forEach(([m,v])=>{if(+v<minM){minM=+v;minW=eName(k)+' '+m.toLowerCase()}}));
+ let maxP=0,maxW='';E.forEach(([k,e])=>{if((e.pain||0)>maxP){maxP=e.pain;maxW=eName(k)}});
+ const lbc=LBAL.filter(([k])=>S['lb_'+k]==='60'||S['lb_'+k]==='20').length;
+ return{mob:`${restricted.length?restricted.length+' joint'+(restricted.length>1?'s':'')+' with restricted range ('+restricted.join(', ')+')':'No restricted range'} · ${fa.length?hard.length+' of '+fa.length+' daily activities not easy':'daily activities not asked yet'}`,
+  str:minM<5?`Weakest muscle: MMT ${minM}/5 (${minW})`:'All tested muscles 5/5',
+  pain:maxP?`Highest pain ${maxP}/10 (${maxW}). Score = 100 − pain × 10`:'No pain recorded',
+  bal:`Balance test: ${S.stage4?S.stage4.toLowerCase():'not done'} · feels ${S.balconf?S.balconf.toLowerCase():'–'}${lbc?' · '+lbc+' daily situation'+(lbc>1?'s':'')+' need care':''}`}}
+function renderMeasure(){const bi=bmiInfo(),w=numv('m_waist'),hp=numv('m_hipc'),h=numv('height');const out=[];
+ out.push(bi?`<div class="cbox"><div class="lbl">BMI</div><div class="big">${bi.b.toFixed(1)}</div><span class="cat" style="background:${bi.col}">${bi.cat}</span></div>`:`<div class="cbox"><div class="lbl">BMI</div><div class="big">–</div><div class="lbl">enter height & weight</div></div>`);
+ if(w&&h){const r=w/h;out.push(`<div class="cbox"><div class="lbl">Waist-to-height ratio</div><div class="big">${r.toFixed(2)}</div><span class="cat" style="background:${r>0.5?'var(--amb)':'var(--ok)'}">${r>0.5?'Above 0.5':'Healthy'}</span></div>`)}
+ if(w&&hp){const r=w/hp;out.push(`<div class="cbox"><div class="lbl">Waist-to-hip ratio</div><div class="big">${r.toFixed(2)}</div><span class="cat" style="background:${r>=0.85?'var(--amb)':'var(--ok)'}">${r>=0.85?'High (≥0.85)':'Healthy'}</span></div>`)}
+ if(w)out.push(`<div class="cbox"><div class="lbl">Waist</div><div class="big">${w} cm</div><span class="cat" style="background:${w>=80?'var(--amb)':'var(--ok)'}">${w>=80?'Above 80 cm':'Healthy'}</span></div>`);
+ $('#calcBox').innerHTML=out.join('');
+ document.querySelectorAll('[data-chg]').forEach(el=>{const k=el.dataset.chg,pv=reMode()&&S.prev?parseFloat(S.prev.answers[k]):NaN,cv=numv(k);el.innerHTML=!isNaN(pv)&&cv!=null&&cv!==pv?`<span style="color:var(--pri)">${cv>pv?'+':''}${(cv-pv).toFixed(1)} since last</span>`:''})}
+/* ---------- update ---------- */
+function update(){
+ renderRe();syncUI();renderCard();
+ $('#reJoint').classList.toggle('hidden',!(reMode()&&S.prev&&Object.keys(S.prev.answers.jd||{}).length));
+ const NOLAST=new Set([...CARRY,'date','visit','consent','assessor','hchange']);document.querySelectorAll('[data-last]').forEach(el=>{const k=el.dataset.last;el.textContent=reMode()&&S.prev&&!NOLAST.has(k)?((l=>l?'last: '+l:'')(lastLabel(k,S.prev.answers[k]))):''});
+ const SHORT={client:'Client',health:'Health',pain:'Pain & movement',func:'Daily activities',balance:'Balance & strength',body:'Measurements',plan:'Plan'};const NAMES={health:reMode()?'Health changes':'Health',plan:reMode()?'Progress & plan':'Plan'};SEGS.forEach((s,i)=>{if(s.hiddenTab)return;const t=$('#tab_'+s.id);t.innerHTML=`<span class="n">${i+1}</span><span class="tl">${SHORT[s.id]||s.n}</span>`;$('#seg_'+s.id+' .seg-h h2').textContent=(NAMES[s.id]||s.n)});
+ document.querySelectorAll('[data-fw]').forEach(el=>{const v=S['f_'+el.dataset.fw];el.classList.toggle('hidden',v===undefined||v==='100')});
+ document.querySelectorAll('[data-if]').forEach(el=>el.classList.toggle('hidden',!IFS[el.dataset.if]()));
+ $('#pauseBal').classList.toggle('hidden',!paused());
+ const w=paused()&&S.next==='Start programme'?'No consent recorded: don’t start a programme.':'';$('#pausePlan').textContent=w;$('#pausePlan').classList.toggle('hidden',!w);
+ let D=0,T=0;SEGS.forEach((s,i)=>{if(s.hiddenTab)return;const r=segDone(i);D+=r.d;T+=r.t;const tab=$('#tab_'+s.id),done=r.t>0&&r.d===r.t;
+  if(done&&!tab.classList.contains('done')&&startT){tab.classList.add('pop');setTimeout(()=>tab.classList.remove('pop'),300)}tab.classList.toggle('done',done)});
+ const pct=T?Math.round(D/T*100):0;$('#pct').textContent=pct+'%';$('#pfill').style.width=pct+'%';
+ const r=compute();
+ $('#tot').textContent=f0(r.total);$('#ringF').setAttribute('stroke-dashoffset',r.total==null?427:427-427*r.total/100);
+ renderMeasure();const X=explain();['mob','str','pain','bal'].forEach(k=>$('#x_'+k).textContent=X[k]);
+ ['mob','str','pain','bal'].forEach(k=>{const pv=reMode()&&S.prev?S.prev[k]:null,df=pv!=null&&r[k]!=null?Math.round(r[k]-pv):null;$('#d_'+k).innerHTML=f0(r[k])+(df?` <span class="dl ${df>0?'up':'dn'}">${df>0?'+':''}${df}</span>`:'');$('#f_'+k).style.width=(r[k]||0)+'%'});
+ if(r.total!=null){const[b,c]=band(r.total);$('#bandW').innerHTML=`<span class="band" style="background:${c}">${b}</span>`;$('#ringF').setAttribute('stroke',c)}else $('#bandW').innerHTML='';
+ const JF=r.F.filter(x=>x[0]==='j');$('#jfind').innerHTML=JF.length?`<div class="jboxes">${JF.map(x=>entryBox(x[2],0)).join('')}</div>`:'';
+ const OF=r.F.filter(x=>x[0]!=='j');
+ $('#focus').innerHTML=OF.length?OF.map(([c,t])=>`<li style="${c==='r'?'color:var(--bad);font-weight:600':c==='a'?'color:#8a5a1c':c==='g'?'color:var(--ok);font-weight:600':''}">${esc(t)}</li>`).join(''):(JF.length?'':'<li class="note">No problems recorded so far.</li>');
+ const prev=reMode()&&S.prev?S.prev:lastFor(histKey());$('#vsLast').innerHTML=prev&&r.total!=null?`${esc(prev.visit||'Last')} ${esc(prev.date)}: ${f0(prev.total)} → today ${f0(r.total)} <span class="${r.total>=prev.total?'up':'dn'}">${r.total>=prev.total?'+':''}${Math.round(r.total-prev.total)}</span>`:'';
+ try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}
+ emit('change');
+}
+function touched(){if(!startT)startT=Date.now();update()}
+
+/* ---------- navigation ---------- */
+function go(i){seg=Math.max(0,Math.min(SEGS.length-1,i));
+ SEGS.forEach((s,k)=>$('#seg_'+s.id).classList.toggle('hidden',k!==seg));
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('cur',+b.dataset.seg===seg));
+ $('#curname').textContent=SEGS[seg].hiddenTab?'Progress sheet':`Step ${seg+1} of ${SEGS.length-1} · ${SEGS[seg].n}`;
+ if(SEGS[seg].id==='pain'){doneSegs.add('pain-visited')}
+ const last=SEGS.length-2;$('#prev').disabled=seg===0;
+ $('#next').textContent=SEGS[seg].hiddenTab?'Back to form':seg===last?'Progress →':'Next →';
+ $('#pgLabel').textContent=SEGS[seg].hiddenTab?'Progress sheet':`${seg+1} of ${SEGS.length-1} · ${SEGS[seg].n}`;
+ if(SEGS[seg].id==='progress')renderHist(hist()[histKey()]?histKey():undefined);
+ update();window.scrollTo({top:0,behavior:'smooth'})}
+
+/* ---------- events ---------- */
+function exOf(k){for(const s of SEGS)for(const it of s.items)for(const x of(it.row||[it]))if(x.k===k)return x.ex}
+document.addEventListener('click',e=>{
+ const t=e.target;
+ const ag=t.closest('[data-age]');if(ag){const cur=parseInt(S.age)||50;S.age=String(Math.max(18,Math.min(100,cur+(+ag.dataset.age))));touched();return}
+ const pl=t.closest('[data-prevload]');if(pl){loadPrev(recordsFor()[+pl.dataset.prevload]);touched();return}
+ if(t.closest('[data-prevclear]')){S.prev=null;touched();return}
+ if(t.closest('[data-previmport]')){importAsPrev=true;$('#importFile').click();return}
+ const sg=t.closest('[data-seg]');if(sg){go(+sg.dataset.seg);return}
+ const dot=t.closest('[data-dot]');if(dot){const k=dot.dataset.dot;S.jcur=S.jcur===k?null:k;if(S.jcur)entry(k);cleanEntries();touched();return}
+ const op=t.closest('[data-jopen]');if(op){S.jcur=op.dataset.jopen;cleanEntries();touched();return}
+ if(t.closest('[data-jdone]')){S.jcur=null;cleanEntries();touched();return}
+ if(t.closest('[data-jreset]')){delete S.jd[S.jcur];S.jcur=null;touched();toast('Back to normal');return}
+ const jp=t.closest('[data-jpain]');if(jp){const e=entry(S.jcur),v=+jp.dataset.jpain;e.pain=e.pain===v?undefined:v;touched();return}
+ const mm=t.closest('[data-jmmt]');if(mm){const e=entry(S.jcur),m=mm.dataset.jmmt,cur=e.mmt[m]||'5';e.mmt[m]=MMTS[(MMTS.indexOf(cur)+1)%MMTS.length];if(e.mmt[m]==='5')delete e.mmt[m];touched();return}
+ const mv=t.closest('[data-jmv]');if(mv){const e=entry(S.jcur),m=mv.dataset.jmv;e.rom[m]=((e.rom[m]||0)+1)%4;if(!e.rom[m])delete e.rom[m];touched();return}
+ const b=t.closest('button[data-k]');if(!b)return;
+ const k=b.dataset.k,ty=b.dataset.t,v=b.dataset.v;
+ if(ty==='single')S[k]=S[k]===v?undefined:v;
+ else{let a=S[k]||[];const ex=exOf(k);if(a.includes(v))a=a.filter(x=>x!==v);else if(ex&&v===ex)a=[v];else{a=a.filter(x=>x!==ex);a.push(v)}S[k]=a}
+ touched();
+ if(v==='Other'){const oi=document.querySelector(`[data-oth="${CSS.escape(k)}"]`);if(oi&&!oi.classList.contains('hidden'))oi.focus()}
+});
+document.addEventListener('keydown',e=>{const mv=e.target.closest&&e.target.closest('[data-jmv]');if(mv&&(e.key==='Enter'||e.key===' ')&&e.target===mv){e.preventDefault();mv.click()}});
+document.addEventListener('input',e=>{const i=e.target;
+ if(i.dataset&&i.dataset.k==='dob'&&i.value){const b=new Date(i.value),t=new Date();let ag=t.getFullYear()-b.getFullYear();if(t.getMonth()<b.getMonth()||(t.getMonth()===b.getMonth()&&t.getDate()<b.getDate()))ag--;if(ag>0&&ag<120)S.age=String(ag)}
+ if(i.dataset&&i.dataset.jnote){entry(S.jcur).note=i.value;if(!startT)startT=Date.now();try{localStorage.setItem(STORE,JSON.stringify(S))}catch(x){};return}
+ if(!i.dataset||!i.dataset.k)return;S[i.dataset.k]=i.value;if(!startT)startT=Date.now();update()});
+setInterval(()=>{if(!startT)return;const s=Math.floor((Date.now()-startT)/1000),m=Math.floor(s/60),c=$('#clock');c.textContent=`${m}:${String(s%60).padStart(2,'0')}`;c.className='clock'+(m>=10?' over':m>=8?' warn':'')},1000);
+
+/* ---------- records ---------- */
+function getData(){const r=compute();const a=JSON.parse(JSON.stringify(S));delete a.jcur;return{schema:SCHEMA,savedAt:new Date().toISOString(),answers:a,score:{amble:r.total,function_psfs:r.mob,strength:r.str,pain:r.pain,balanceCoordination:r.bal,dailyActivities:r.fun,raw:r.raw},findings:r.F.map(x=>x[1])}}
+function setData(rec){const a=rec&&(rec.answers||rec);if(!a||typeof a!=='object'||Array.isArray(a))throw new Error('Not an AMBLE record');S=Object.assign(fresh(),JSON.parse(JSON.stringify(a)));S.jcur=null;update();return getData()}
+function emit(type){document.dispatchEvent(new CustomEvent('amble:'+type,{detail:type==='saved'?getData():undefined}));
+ if(window.parent!==window){clearTimeout(emit._t);emit._t=setTimeout(()=>{try{window.parent.postMessage({source:'amble',type,record:getData()},'*')}catch(e){}},type==='change'?400:0)}}
+window.addEventListener('message',e=>{const d=e.data;if(d&&d.source==='amble-host'&&d.type==='load'){try{setData(d.record);toast('Record loaded')}catch(x){}}});
+let MEMH={};
+function hist(){try{return JSON.parse(localStorage.getItem(HIST)||'{}')}catch(e){return MEMH}}
+function putHist(h){MEMH=h;try{localStorage.setItem(HIST,JSON.stringify(h))}catch(e){}}
+function lastFor(n){if(!n)return null;const a=hist()[n];if(!a)return null;const p=a.filter(x=>x.date<(S.date||today()));return p.length?p[p.length-1]:null}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}
+function save(){const n=histKey();if(!n){toast('Add the Client No. or name first');go(0);return}
+ const r=compute(),h=hist(),list=(h[n]||[]).filter(x=>!(x.date===S.date&&x.visit===S.visit));
+ list.push({date:S.date,visit:S.visit||'',total:r.total,mob:r.mob,str:r.str,pain:r.pain,bal:r.bal,raw:r.raw,answers:getData().answers});
+ list.sort((a,b)=>a.date.localeCompare(b.date));h[n]=list;putHist(h);emit('saved');toast('Saved to '+(S.name||n)+'’s progress')}
+const nt=k=>S[k+'_note']?' ('+S[k+'_note']+')':'';
+const ls=(k)=>(Array.isArray(S[k])?S[k]:S[k]?[S[k]]:[]).map(x=>x==='Other'?(S[k+'_other']||'Other'):x).join(', ');
+function measText(){const bi=bmiInfo();const ms=MEAS.filter(([k])=>numv('m_'+k)!=null).map(([k,l])=>`${l} ${numv('m_'+k)}`);if(!bi&&!ms.length)return'';return`\n\nBody: ${numv('height')?'Height '+numv('height')+' cm · ':''}${numv('weight')?'Weight '+numv('weight')+' kg · ':''}${bi?'BMI '+bi.b.toFixed(1)+' ('+bi.cat+')':''}${ms.length?'\nCircumference (cm): '+ms.join(' · '):''}`}
+function summary(){const r=compute();
+ return`AMBLE · ${reMode()?'Re-assessment':'Assessment'}\n${S.name||'Client'}${S.cid?' · Client No. '+S.cid:''}${S.dob?' · DOB '+S.dob:''} · ${S.age?S.age+' yrs':''} · ${S.visit||''} · ${S.date}\n\nAMBLE score ${f0(r.total)}/100${r.total!=null?' ('+band(r.total)[0]+')':''}\nMobility ${f0(r.mob)} · Strength ${f0(r.str)} · Pain ${f0(r.pain)} · Balance & coordination ${f0(r.bal)}${reMode()&&S.prev?`\nSince ${S.prev.date}: AMBLE ${f0(S.prev.total)} → ${f0(r.total)} · Mobility ${f0(S.prev.mob)} → ${f0(r.mob)} · Strength ${f0(S.prev.str)} → ${f0(r.str)} · Pain ${f0(S.prev.pain)} → ${f0(r.pain)} · Balance ${f0(S.prev.bal)} → ${f0(r.bal)}`:''}\n\nFindings:\n${r.F.map(x=>'– '+x[1]).join('\n')||'– No problems recorded'}\n\nNext step: ${S.next==='Other'?S.next_other:S.next||'–'}${nt('next')}\nShort-term goals: ${ls('stg')||'–'}${nt('stg')}\nLong-term goals: ${ls('ltg')||'–'}${nt('ltg')}\nTreatment: ${ls('tx')||'–'}${nt('tx')}\nSessions per month: ${S.sessions==='Other'?S.sessions_other:S.sessions||'–'}${measText()}${(S.prec||[]).length?'\nPrecautions: '+ls('prec'):''}${S.notes?'\nNotes: '+S.notes:''}`}
+function renderHist(sel){
+ const h=hist(),names=Object.keys(h);sel=sel||names[0];
+ $('#clientPick').innerHTML=names.length?names.map(n=>{const L=h[n][h[n].length-1],nm=L&&L.answers&&L.answers.name;return`<button type="button" class="o${n===sel?' on':''}" data-hc="${esc(n)}">${esc(nm&&nm!==n?nm+' · '+n:n)}</button>`}).join(''):'<span class="note">No saved clients yet.</span>';
+ const rows=h[sel]||[],tb=$('#hist'),ch=$('#chart');
+ if(!rows.length){tb.innerHTML='';ch.innerHTML='<p class="note">Save an assessment, or load the sample client.</p>';return}
+ const b=rows[0],d=(a,c,dir,m)=>{if(a==null||c==null)return'';const x=c-a;if(Math.abs(x)<.5)return'';const g=dir>0?x>0:x<0;return` <span class="${g?'up':'dn'}">${x>0?'+':''}${Math.round(x)}</span>${g&&Math.abs(x)>=m?'<span class="tag">real</span>':''}`};
+ tb.innerHTML='<tr><th>Visit</th><th>AMBLE</th><th>Function</th><th>Strength</th><th>Pain</th><th>Balance</th><th>Max pain</th><th>Weight</th><th>BMI</th><th>Waist</th></tr>'+rows.map((r,i)=>`<tr><td>${esc(r.visit||r.date)}<div class="note">${esc(r.date)}</div></td><td><b>${f0(r.total)}</b>${i?d(b.total,r.total,1,8):''}</td><td>${f0(r.mob)}${i?d(b.mob,r.mob,1,10):''}</td><td>${f0(r.str)}${i?d(b.str,r.str,1,10):''}</td><td>${f0(r.pain)}${i?d(b.pain,r.pain,1,20):''}</td><td>${f0(r.bal)}${i?d(b.bal,r.bal,1,10):''}</td><td>${r.raw.maxPain??'–'}/10${i?d(b.raw.maxPain,r.raw.maxPain,-1,2):''}</td><td>${r.raw.weight??'–'}</td><td>${r.raw.bmi!=null?(+r.raw.bmi).toFixed(1):'–'}</td><td>${r.raw.waist??'–'}</td></tr>`).join('');
+ const W=840,H=220,P=36,xs=i=>P+(rows.length===1?(W-2*P)/2:i*(W-2*P)/(rows.length-1)),ys=v=>H-P-(v/100)*(H-2*P-12);
+ const ser=[['total','AMBLE','#2c5a52',3],['mob','Mobility','#d4923a',1.6],['str','Strength','#5b7fa6',1.6],['pain','Pain','#c0503f',1.6],['bal','Balance','#3f8a5a',1.6]];
+ let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;font-family:inherit">`;
+ [0,60,80,100].forEach(g=>s+=`<line x1="${P}" x2="${W-P}" y1="${ys(g)}" y2="${ys(g)}" stroke="#eef1f0"/><text x="${P-6}" y="${ys(g)+4}" font-size="10" text-anchor="end" fill="#7a8683">${g}</text>`);
+ ser.forEach(([k,l,c,w])=>{s+=`<polyline points="${rows.map((r,i)=>r[k]!=null?`${xs(i)},${ys(r[k])}`:'').filter(Boolean).join(' ')}" fill="none" stroke="${c}" stroke-width="${w}"/>`;rows.forEach((r,i)=>{if(r[k]!=null)s+=`<circle cx="${xs(i)}" cy="${ys(r[k])}" r="${k==='total'?4.5:3}" fill="${c}"/>`});if(k==='total')rows.forEach((r,i)=>s+=`<text x="${xs(i)}" y="${ys(r.total)-9}" font-size="11" font-weight="700" text-anchor="middle" fill="${c}">${f0(r.total)}</text>`)});
+ rows.forEach((r,i)=>s+=`<text x="${xs(i)}" y="${H-8}" font-size="10" text-anchor="middle" fill="#7a8683">${esc(r.date)}</text>`);
+ let lx=P;ser.forEach(([k,l,c])=>{s+=`<rect x="${lx}" y="2" width="10" height="10" rx="2" fill="${c}"/><text x="${lx+14}" y="11" font-size="11" fill="#1f2d2b">${l}</text>`;lx+=92});
+ ch.innerHTML=s+'</svg>'}
+function demo(){const h=hist(),m=(d,v,t,p,mo,fn,bl,mp)=>({date:d,visit:v,total:t,pain:p,mob:mo,str:fn,bal:bl,raw:{maxPain:mp}});
+ h['AMB-0001']=[m('2026-02-01','Initial',58,30,62,64,74,7),m('2026-05-01','Re-assessment',68,50,72,72,78,5),m('2026-08-01','Re-assessment',77,70,80,79,80,3),m('2026-11-01','Re-assessment',85,80,88,86,86,2)];
+ h['AMB-0001'].forEach(x=>x.answers={name:'Sample · Mrs A.',cid:'AMB-0001',age:'58',date:x.date,visit:x.visit,stg:['Reduce pain','Improve joint mobility'],ltg:['Prevent falls'],tx:['Mobility training','Strength training'],jd:{'shoulder|R':{pain:6,rom:{Abduction:2},mmt:{'External rotation':'4'}},'lback|C':{pain:4,rom:{Flexion:1},mmt:{}}},f_hook:'30',f_floor:'60',stage4:'Tandem',balconf:'Mostly'});putHist(h);renderHist('AMB-0001')}
+function reset(){S=fresh();startT=null;doneSegs=new Set();$('#clock').textContent='0:00';$('#clock').className='clock';go(0);return getData()}
+
+/* ---------- init ---------- */
+render();
+try{const d=JSON.parse(localStorage.getItem(STORE)||'null');if(d&&typeof d==='object'&&d.jd){S=Object.assign(fresh(),d);S.jcur=null;setTimeout(()=>toast('Unsaved draft restored'),300)}}catch(e){}
+go(0);
+$('#prev').onclick=()=>go(seg-1);
+$('#next').onclick=()=>{if(SEGS[seg].hiddenTab)go(SEGS.length-2);else go(seg+1)};
+$('#progBtn').onclick=()=>go(SEGS.length-1);
+$('#saveBtn').onclick=save;
+$('#copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(summary());toast('Summary copied: paste into WhatsApp / email')}catch(e){toast('Copy not allowed here')}};
+$('#printBtn').onclick=()=>{SEGS.forEach(s=>$('#seg_'+s.id).classList.remove('hidden'));$('#seg_progress').classList.add('hidden');try{window.print()}catch(e){}setTimeout(()=>go(seg),500)};
+$('#dlBtn').onclick=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(getData(),null,2)],{type:'application/json'}));a.download=`AMBLE_${(S.name||'client').replace(/[^\w-]+/g,'_')}_${S.date}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}catch(e){toast('Download not allowed here')}};
+$('#impBtn').onclick=()=>{importAsPrev=false;$('#importFile').click()};
+let importAsPrev=false;
+$('#importFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f){importAsPrev=false;return}try{const d=JSON.parse(await f.text());if(importAsPrev){const a=d.answers||d,sc=d.score||{};loadPrev({date:a.date,visit:a.visit,total:sc.amble,mob:sc.mobility,str:sc.strength,pain:sc.pain,bal:sc.balanceCoordination,answers:a});touched()}else{setData(d);toast('Record imported')}}catch(x){toast('Not an AMBLE record')}importAsPrev=false};
+$('#newBtn').onclick=reset;$('#demoBtn').onclick=demo;
+$('#clientPick').onclick=e=>{const b=e.target.closest('[data-hc]');if(b)renderHist(b.dataset.hc)};
+
+/* ---------- validated scoring (overrides) ---------- */
+function ageNum(){return parseInt(S.age)||55}
+function chairRef(){return ageNum()<60?18:15}
+function chairLow(){const a=ageNum();return a<60?14:a<65?12:a<70?11:10}
+function stageSecs(){if(!S.stage4)return null;const order=['Feet together','Semi-tandem','Tandem','Single leg'];if(S.stage4==='Unable')return Math.min(9.9,numv('stage_part')||0);const n=order.indexOf(S.stage4)+1;return 10*n+(n<4?Math.min(9.9,numv('stage_part')||0):0)}
+function psfsVals(){return[...PSQ.map((a,i)=>S['pa_'+(i+1)]),S.ps_s1,S.ps_s2].filter(v=>v!==undefined).map(Number)}
+function abcVals(){return[1,2,3,4,5,6].map(i=>S['abc_'+i]).filter(v=>v!==undefined).map(Number)}
+function compute(){
+ const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));
+ const pains=E.map(([k,e])=>e.pain||0).filter(p=>p>0),maxP=pains.length?Math.max(...pains):0;
+ const pain=clamp(100-maxP*10);
+ const ps=psfsVals(),psAvg=ps.length?avg(ps):null,mob=psAvg!=null?psAvg*10:null;
+ const ch=S.chair_arms==='Yes'?0:(S.chair!=null?S.chair:null),str=ch!=null?clamp(ch/chairRef()*100):null;
+ const ab=abcVals(),abAvg=ab.length?avg(ab):null,ss=stageSecs(),stS=ss!=null?ss/40*100:null;
+ const bal=stS;
+ const parts=[mob,str,pain,bal].filter(x=>x!=null),total=parts.length?avg(parts):null;
+ const F=[];
+ if(S.consent==='No')F.push(['r','No consent: defer assessment']);
+ E.sort((a,b)=>sev(b[1])-sev(a[1])).forEach(([k,e])=>F.push(['j',entryLines(k),k]));
+ if(reMode()&&S.prev){const pj=S.prev.answers.jd||{};Object.keys(pj).filter(x=>hasData(pj[x])&&!hasData((S.jd||{})[x])).forEach(x=>F.push(['g',eName(x)+': resolved since last assessment']));Object.keys(S).filter(x=>x.startsWith('gr_')&&S[x]).forEach(x=>F.push([S[x]==='Not yet'?'a':'g',`Goal “${x.slice(3)}”: ${S[x].toLowerCase()}`]))}
+ if(S.otherArea)F.push(['a','Other area: '+S.otherArea]);
+ if(pains.length&&(S.ptype||[]).some(x=>x==='Tingling / numb'||x==='Radiating'))F.push(['a','Nerve-type symptoms: neuro screen']);
+ PSQ.forEach((a,i)=>{const v=S['pa_'+(i+1)];if(v!==undefined&&+v<10){const wh=(S['pw_'+(i+1)]||[]).join(', '),nt=S['pn_'+(i+1)];F.push([+v<=4?'a':'',`${a}: ${v}/10${wh?' · '+wh:''}${nt?' · '+nt:''}`])}});[1,2].forEach(i=>{const v=S['ps_s'+i];if(v!==undefined&&+v<10)F.push([+v<=4?'a':'',`${S['ps_t'+i]||'Other activity'}: ${v}/10`])});
+ const stY=['st_fall','st_unst','st_worry'].filter(k=>S[k]==='Yes');
+ if(stY.length)F.push(['a',`STEADI screen positive: ${stY.map(k=>({st_fall:'fallen in past year'+(S.st_times?' ('+S.st_times+(S.st_inj==='Yes'?', injured':'')+')':''),st_unst:'feels unsteady',st_worry:'worries about falling'})[k]).join(' · ')}`]);
+ if(S.stage4&&['Unable','Feet together','Semi-tandem'].includes(S.stage4))F.push(['a',`4-Stage Balance: cannot hold tandem 10 s → increased fall risk (CDC)`]);
+ else if(S.stage4==='Tandem')F.push(['','4-Stage Balance: held tandem, not single leg']);
+ if(ch!=null&&ch<chairLow())F.push(['a',`30-s chair stand ${ch}${S.chair_arms==='Yes'?' (used arms)':''} · below average for age`]);
+ FUNC.forEach(([k,n])=>{const v=S['f_'+k];if(v===undefined||v==='100')return;const lab=v==='0'?'can’t':v==='30'?'painful':'difficult',wh=(S['fw_'+k]||[]).join(', '),nt=S['fn_'+k];F.push([v==='0'?'r':v==='30'?'a':'',`${n}: ${lab}${wh?' · '+wh:''}${nt?' · '+nt:''}`])});
+ if(S.f_other!==undefined&&S.f_other!=='100')F.push(['',`${S.f_other_txt||'Other activity'}: ${FO.find(x=>String(x[1])===S.f_other)[0].toLowerCase()}`]);
+ LBAL.forEach(([k,n])=>{const v=S['lb_'+k];if(v==='20')F.push(['a',n+': avoids']);else if(v==='60')F.push(['',n+': careful'])});
+ {const bi=bmiInfo();if(bi&&bi.cat!=='Normal')F.push(['a',`BMI ${bi.b.toFixed(1)} · ${bi.cat.toLowerCase()} (Indian cut-offs)`]);const w=numv('m_waist');if(w&&w>=80)F.push(['a',`Waist ${w} cm · above 80 cm`]);}
+ return{mob,str,pain,bal,total,F,raw:{maxPain:maxP,psfs:psAvg,chair:ch,abc:abAvg,stageSec:ss,joints:E.length,bmi:(bmiInfo()||{}).b,weight:numv('weight'),waist:numv('m_waist')}};
+}
+function explain(){
+ const r=compute(),ps=psfsVals();
+ const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));let maxP=0,maxW='';E.forEach(([k,e])=>{if((e.pain||0)>maxP){maxP=e.pain;maxW=eName(k)}});
+ return{mob:ps.length?`Average ${r.raw.psfs.toFixed(1)}/10 over ${ps.length} activit${ps.length>1?'ies':'y'}`:'Activities not rated yet',
+  str:r.raw.chair!=null?`${r.raw.chair} stands in 30 s · reference ${chairRef()} for her age${S.chair_arms==='Yes'?' · used arms':''}`:'Chair stand not done yet',
+  pain:maxP?`Highest pain ${maxP}/10 (${maxW})`:'No pain recorded',
+  bal:r.raw.stageSec!=null?`4-Stage: ${S.stage4.toLowerCase()} · ${r.raw.stageSec.toFixed(1)} of 40 s held`:'Balance test not done yet'}}
+function segDone(i){const s=SEGS[i];if(s.hiddenTab)return false;const has=k=>{const v=S[k];return Array.isArray(v)?v.length>0:v!==undefined&&v!==''};const checks=[];
+ s.items.forEach(it=>{(it.row||[it]).forEach(x=>{if(x.req&&vis(x))checks.push(has(x.k))});
+  if(it.type==='bodymap')checks.push(doneSegs.has('pain-visited'));
+  if(it.type==='hchange'&&reMode())checks.push(!!S.hchange);
+  if(it.type==='prevbox'&&reMode())checks.push(!!S.prev);
+  if(it.type==='psfs')checks.push(PSQ.every((a,i)=>S['pa_'+(i+1)]!==undefined));
+  if(it.type==='stage4v'&&!paused())checks.push(!!S.stage4);
+  if(it.type==='chair'&&!paused())checks.push(S.chair!=null||S.chair_arms==='Yes');
+  if(it.type==='func')checks.push(FUNC.every(([k])=>S['f_'+k]!==undefined));
+  if(it.type==='lbal')checks.push(LBAL.filter(([k])=>S['lb_'+k]!==undefined).length>=3);
+  if(it.type==='measure')checks.push(numv('height')!=null&&numv('weight')!=null)});
+ return checks.length?{d:checks.filter(Boolean).length,t:checks.length}:{d:0,t:0}}
+function renderPsScript(){const el=$('#psScript');if(!el)return;
+ if(reMode()&&S.prev){const acts=[1,2,3,4,5].map(i=>S.prev.answers['ps_t'+i]).filter(Boolean);el.innerHTML=`“When I assessed you on ${esc(S.prev.date)}, you told me that you had difficulty with <b>${esc(acts.join(', ')||'…')}</b>. Today, do you still have difficulty with…?” <span class="note">(read each activity and have her score it)</span>`}
+ else el.innerHTML=`“I am going to ask you to identify up to three important activities that you are unable to do or are having difficulty with as a result of your problem. Today, are there any activities that you are unable to do or having difficulty with because of your problem?” <span class="note">(show the 0–10 scale and have her rate each activity)</span>`}
+let vcd=null;
+document.addEventListener('click',e=>{const sp=e.target.closest('[data-step]');if(sp){const[k,d]=sp.dataset.step.split(':');S[k]=Math.max(0,(S[k]??0)+Number(d));touched();return}
+ const f=e.target.closest('[data-psfill]');if(f){for(let i=1;i<=5;i++){if(!(S['ps_t'+i]||'').trim()){S['ps_t'+i]=f.dataset.psfill;break}}touched();return}
+ if(e.target.closest('#chairT')){clearInterval(vcd);let t=30;const c=$('#chairClock');c.style.color='';c.textContent=t+'s';if(!startT)startT=Date.now();vcd=setInterval(()=>{t--;c.textContent=t>0?t+'s':'Stop';if(t<=0){clearInterval(vcd);c.style.color='var(--bad)'}},1000)}});
+document.addEventListener('amble:change',()=>{document.querySelectorAll('[data-fwp]').forEach(el=>{const v=S['pa_'+el.dataset.fwp];el.classList.toggle('hidden',v===undefined||v==='10')});renderPsScript();const cv=$('#chairV');if(cv)cv.textContent=S.chair_arms==='Yes'?'0':(S.chair??'–')});
+renderPsScript();update();
+window.Amble=Object.freeze({schema:SCHEMA,getData,setData,reset,score:compute});
+</script>
+</body>
+</html>
