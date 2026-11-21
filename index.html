@@ -1008,19 +1008,19 @@ function monthCalc(c,ym){const t=today(),end=lastDay(ym),r={planned:0,done:0,ski
  for(let d=ym+'-01';d<=end;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{const st=stOf(x);if(st==='moved'){r.moved++;return}r.planned++;
   if(st==='done')r.done++;else if(st==='skip'){r.skip++;r.reasons.push({d,why:(x.s&&x.s.reason)||''})}else if(d<t)r.unmarked++;else r.todo++});return r}
 // ---------- AMBLE assessments ----------
-const AMB_HIST='amble_comb_history_v3',AMB_DRAFT='amble_comb_draft_v3';
+const AMB_HIST='amble_comb_history_v4',AMB_DRAFT='amble_comb_draft_v7';
 const assessOf=cid=>all('assessment').filter(a=>a.clientId===cid).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.savedAt||'').localeCompare(b.savedAt||''));
 const scoreCol=v=>v==null?'var(--muted)':v>=75?'var(--ok)':v>=50?'var(--warn)':'var(--danger)';
 function assessHtml(c){const L=assessOf(c.id),last=L[L.length-1],prev=L[L.length-2];
  const sc=a=>(a&&a.score)||{},num=v=>v==null||v===''?'–':Math.round(v);
  const delta=(k)=>{if(!last||!prev||sc(last)[k]==null||sc(prev)[k]==null)return'';const d=Math.round(sc(last)[k]-sc(prev)[k]);return d?`<span class="dl ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${Math.abs(d)}</span>`:''};
- const parts=[['AMBLE score','amble'],['Function','function_psfs'],['Strength','strength'],['Pain','pain'],['Balance','balanceCoordination']];
+ const parts=[['AMBLE score','amble'],['Mobility','function_psfs'],['Strengthening','strength'],['Pain','pain'],['Balance & coord.','balanceCoordination']];
  const maxT=Math.max(100,...L.map(a=>+sc(a).amble||0));
  return`<section class="card pad asmt"><div class="sec-h"><h3>Assessments</h3><span class="muted sm">${L.length?L.length+' saved':''}</span><span class="grow"></span><button class="btn sm primary" data-act="asNew" data-id="${c.id}">${ic('plus')}${L.length?'Re-assessment':'New assessment'}</button></div>
  ${last?`<div class="kgrid">${parts.map(([l,k])=>`<div class="kbox"><div class="kv" style="color:${scoreCol(sc(last)[k])}">${num(sc(last)[k])}</div><div class="kl">${l} ${delta(k)}</div></div>`).join('')}</div>
  ${L.length>1?`<div class="spark">${L.map(a=>`<div class="sb" title="${esc(a.date)} · ${num(sc(a).amble)}"><i style="height:${Math.max(4,(+sc(a).amble||0)/maxT*100)}%;background:${scoreCol(sc(a).amble)}"></i><span>${parseD(a.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>`).join('')}</div>`:''}
  ${(last.findings||[]).length?`<div class="group-h" style="margin-top:12px">Latest findings</div><ul class="finds">${last.findings.slice(0,6).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
- <div class="group-h" style="margin-top:12px">History</div>${L.slice().reverse().map(a=>`<div class="tx" data-act="asOpen" data-id="${esc(a.id)}"><span class="em">📋</span><div class="grow"><div class="row-t">${esc(a.visit||'Assessment')} · ${fmtLongDate(a.date)}</div><div class="muted sm">AMBLE ${num(sc(a).amble)} · Function ${num(sc(a).function_psfs)} · Strength ${num(sc(a).strength)} · Pain ${num(sc(a).pain)} · Balance ${num(sc(a).balanceCoordination)}</div></div><button class="icon-btn" data-act="asDel" data-id="${esc(a.id)}" title="Delete" aria-label="Delete">${ic('trash')}</button></div>`).join('')}`
+ <div class="group-h" style="margin-top:12px">History</div>${L.slice().reverse().map(a=>`<div class="tx" data-act="asOpen" data-id="${esc(a.id)}"><span class="em">📋</span><div class="grow"><div class="row-t">${esc(a.visit||'Assessment')} · ${fmtLongDate(a.date)}</div><div class="muted sm">AMBLE ${num(sc(a).amble)} · Mobility ${num(sc(a).function_psfs)} · Strengthening ${num(sc(a).strength)} · Pain ${num(sc(a).pain)} · Balance ${num(sc(a).balanceCoordination)}</div></div><button class="icon-btn" data-act="asDel" data-id="${esc(a.id)}" title="Delete" aria-label="Delete">${ic('trash')}</button></div>`).join('')}`
  :`<div class="empty">No assessments yet. Tap “New assessment” to do ${esc(c.name)}’s first one — name, date of birth and age are filled in for you.</div>`}</section>`}
 function seedAmbleHistory(c,key){try{const h=JSON.parse(localStorage.getItem(AMB_HIST)||'{}');
  h[key]=assessOf(c.id).map(a=>{const sc=a.score||{};return{date:a.date,visit:a.visit||'',total:sc.amble,mob:sc.function_psfs,str:sc.strength,pain:sc.pain,bal:sc.balanceCoordination,raw:sc.raw,answers:a.record||{}}});

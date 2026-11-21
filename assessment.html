@@ -193,7 +193,7 @@ table.h{width:100%;border-collapse:collapse;font-size:12.5px}table.h th,table.h 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
-const SCHEMA='amble-assessment-combined/1',STORE='amble_comb_draft_v3',HIST='amble_comb_history_v3';
+const SCHEMA='amble-assessment-combined/1',STORE='amble_comb_draft_v7',HIST='amble_comb_history_v4';
 
 /* ---------- joints ---------- */
 const JT={
@@ -251,9 +251,10 @@ const SEGS=[
   {row:[{k:'consent',type:'single',l:'Consent',o:['Yes','No'],req:1},{k:'assessor',type:'text',l:'Assessed by'}]},
  ]},
  {id:'health',n:'Health',t:'1 min',items:[{type:'hchange'},
-  {if:'hshow',k:'cond',type:'multi',ex:'None',l:'Past medical conditions',req:1,other:1,o:['None','High BP','Diabetes','Thyroid','Heart condition','Asthma','Osteoarthritis','Rheumatoid / autoimmune','Fracture history','Surgery history','Cancer history','Recent fall / injury','Anaemia / low Vit D']},
-  {if:'hshow',k:'meds',type:'multi',ex:'None',l:'Medication',other:1,o:['None','Painkillers','Blood thinners','Steroids','BP / heart','Diabetes','Thyroid','HRT','Calcium / Vit D']},
-  {if:'hshow',row:[{if:'hshow',k:'meno',type:'single',l:'Menopause',o:['Pre','Peri','Post','Post + HRT'],req:1,other:1},{if:'hshow',k:'activity',type:'single',l:'Activity level',o:['Low','Light','Moderate','High']}]},
+  {if:'hshow',k:'cond',type:'multi',ex:'None',l:'Past medical conditions',req:1,other:1,o:['None','High BP','Diabetes','Thyroid','Heart condition','Asthma','Osteoarthritis','Rheumatoid / autoimmune','Fracture history','Surgery history','Hysterectomy','Recent fall / injury','Anaemia / low Vit D']},
+  {if:'hshow',type:'conddetail'},
+  {if:'hshow',k:'meds',type:'multi',ex:'None',l:'Medication',other:1,o:['None','Painkillers','Blood thinners','BP','Cardiac','Diabetes','Thyroid','Calcium','Vitamin D','Iron / haemoglobin']},
+  {if:'hshow',row:[{if:'hshow',k:'meno',type:'single',l:'Menopause',o:['Pre','Peri','Post','Post + on hormone therapy (HRT)'],req:1,other:1},{if:'hshow',k:'activity',type:'single',l:'Activity level',o:['Low','Light','Moderate','High']}]},
   {if:'hshow',k:'sleep',type:'single',l:'Sleep',o:['<5 h','5–6 h','6–7 h','7 h+']},
  ]},
  {id:'pain',n:'Pain & movement',t:'2–3 min',items:[{type:'bodymap'},
@@ -320,13 +321,14 @@ function special(it){
  case'measure':return`<div class="q"><div class="ql"><span>Height & weight</span><em>BMI calculates itself</em></div><div class="mgrid">${mfield('height','Height','', 'cm')}${mfield('weight','Weight','','kg')}</div><div class="calc" id="calcBox"></div></div>
    <div class="q"><div class="ql"><span>Body circumference</span><em>tape measure · cm</em></div><div class="mgrid">${MEAS.map(([k,l,h])=>mfield('m_'+k,l,h,'cm')).join('')}</div></div>`;
  case'funchead':return`<div class="legendline" style="margin:14px 0 8px"><b>Indian daily activities</b> · clinical information, not part of the score. Based on Indian research on floor sitting, squatting, bending and toilet use.</div>`;
- case'lbalhead':return`<div class="legendline" style="margin:14px 0 8px"><b>Balance in daily life</b> · clinical information, not part of the score.</div>`;
+ case'lbalhead':return`<div class="legendline" style="margin:14px 0 8px"><b>Balance & coordination in daily life</b> · how confident does she feel? (clinical information, not part of the score)</div>`;
+ case'conddetail':return`<div id="condDetail" data-if="hshow"></div>`;
  case'steadihead':return`<div class="legendline" style="margin-bottom:8px"><b>CDC STEADI – Three Key Questions.</b> A “Yes” to any question means increased fall risk.</div>`;
- case'psfs':return`<div class="legendline" style="margin-bottom:8px"><b>Activity rating</b> · 0–10 scale from the PSFS (Stratford et al., 1995). Ask her about every activity, one by one.</div>
-  <div class="q"><div class="ql"><span>“How able are you to do this today?”</span><em>0 = unable to perform · 10 = able to perform at the same level as before the problem</em></div>
-  ${PSQ.map((a,i)=>`<div class="tr"><div class="nm">${esc(a)}<span class="lastv" data-last="pa_${i+1}"></span></div>${psc('pa_'+(i+1))}</div><div class="fwhere hidden" data-fwp="${i+1}"><div class="note" style="margin-bottom:6px">Where does it hurt / what limits it?</div><div class="opts">${WHERE.map(w=>ob('pw_'+(i+1),'multi',w,w)).join('')}</div><input type="text" class="qnote" data-k="pn_${i+1}" placeholder="Notes" maxlength="200"></div>`).join('')}
-  ${[1,2].map(i=>`<div class="tr"><div><input type="text" data-k="ps_t${i}" placeholder="+ Other activity (optional)" maxlength="120"><span class="lastv" data-last="ps_s${i}"></span></div>${psc('ps_s'+i)}</div>`).join('')}
-  <div class="note" style="margin-top:8px">Below 10, choose where it hurts. Score = average of all activities rated.</div></div>`;
+ case'psfs':return`<div class="legendline" style="margin-bottom:8px"><b>Daily activities</b> · ask her about every activity, one by one.</div>
+  <div class="q"><div class="ql"><span>“How easy is it for you to…”</span><em>Easy · Difficult · Painful · Can't</em></div>
+  ${PSQ.map((a,i)=>`<div class="tr"><div class="nm">${esc(a)}<span class="lastv" data-last="pa_${i+1}"></span></div>${edo('pa_'+(i+1))}</div><div class="fwhere hidden" data-fwp="${i+1}"><div class="note" style="margin-bottom:6px">Where does it hurt / what limits it?</div><div class="opts">${WHERE.map(w=>ob('pw_'+(i+1),'multi',w,w)).join('')}</div><input type="text" class="qnote" data-k="pn_${i+1}" placeholder="Notes" maxlength="200"></div>`).join('')}
+  ${[1,2].map(i=>`<div class="tr"><div><input type="text" data-k="ps_t${i}" placeholder="+ Other activity (optional)" maxlength="120"><span class="lastv" data-last="ps_s${i}"></span></div>${edo('ps_s'+i)}</div>`).join('')}
+  <div class="note" style="margin-top:8px">If not Easy, choose where it hurts. Score: Easy 100 · Difficult 60 · Painful 30 · Can't 0, averaged.</div></div>`;
  case'stage4v':return`<div class="banner hidden" id="pauseBal">No consent: skip balance tests.</div><div class="q"><div class="ql"><span>CDC 4-Stage Balance Test<span class="lastv" data-last="stage4"></span></span><em>no support · eyes open · don’t move the feet</em></div>
   <div class="note" style="margin-bottom:8px">Hold each position 10 s. If she holds it, go to the next; if not, stop. Tap the <b>highest position held for 10 s</b>.</div>
   <div class="opts">${[['Feet together','c3'],['Semi-tandem','c2'],['Tandem','c1'],['Single leg','c1'],['Unable','c4']].map(([l,c])=>ob('stage4','single',l,l,c)).join('')}</div>
@@ -350,15 +352,7 @@ function special(it){
    <div class="tr"><div><input type="text" data-k="f_other_txt" placeholder="+ Other activity (type)" maxlength="80"></div><div class="opts">${FO.map(([l,v,c])=>ob('f_other','single',l,String(v),c)).join('')}</div></div></div>`;
  case'stage':return`<div class="banner hidden" id="pauseBal">No consent: skip balance tests.</div><div class="q"><div class="ql"><span>Balance test · hold 10 s each<span class="lastv" data-last="stage4"></span></span><em>tap the highest she holds</em></div><div class="opts">${STAGE.map(([l,v])=>ob('stage4','single',l,l,v>=75?'c1':v>=50?'c2':v>0?'c3':'c4')).join('')}</div></div>`;
  case'lbal':return`<div class="q"><div class="ql"><span>Balance & coordination in daily life</span><em>how does she manage…</em></div>${rateRows(LBAL,'lb_',LO)}</div>`;
- case'results':return`<div class="banner hidden" id="pausePlan"></div><div class="q"><div class="res"><div class="ring"><svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="68" fill="none" stroke="#f0f3f2" stroke-width="11"/><circle id="ringF" cx="80" cy="80" r="68" fill="none" stroke="#2c5a52" stroke-width="11" stroke-linecap="round" stroke-dasharray="427" stroke-dashoffset="427" transform="rotate(-90 80 80)"/></svg><div class="v"><span id="tot">–</span><small>AMBLE score</small></div></div><div><div id="bandW" style="margin-bottom:8px"></div><div class="legendline">Each part comes from a published, validated test, converted to 0–100 (100 = best). The combined AMBLE index is in-house and under validation.</div>${[['mob','Function · activity rating'],['str','Strength · 30-s chair stand'],['pain','Pain · NPRS (100 = no pain)'],['bal','Balance · 4-Stage']].map(([k,l])=>`<div class="bar"><div class="lb"><span>${l}</span><b id="d_${k}">–</b></div><div class="tk"><div class="fl" id="f_${k}" style="width:0"></div></div><div class="bx" id="x_${k}"></div></div>`).join('')}<div class="note" id="vsLast"></div></div></div></div><details class="q" style="cursor:pointer"><summary style="font-weight:600;font-size:13px">Score basis (for doctors & investors)</summary><div class="note" style="margin-top:8px;line-height:1.6">
-<b>Function</b> = average of the activity ratings (0–10) × 10. The 0–10 scale is the PSFS scale (Stratford et al., 1995); the fixed activity list is AMBLE’s own, based on Indian research on floor sitting, squatting and toilet use.<br>
-<b>Strength</b> = 30-second chair stand ÷ reference × 100 (max 100). Reference: 18 stands under 60 (mean for women 51–60), 15 stands for 60+ (Rikli & Jones criterion standard for women 60–69). Used arms = 0.<br>
-<b>Pain</b> = 100 − (highest NPRS 0–10 × 10).<br>
-<b>Balance</b> = CDC 4-Stage Balance Test: seconds held out of 40, × 100/40. (The Indian ABC-H balance-confidence scale will be added once its published wording is available.)<br>
-<b>Fall-risk flags</b> follow CDC STEADI: any “Yes” on the Three Key Questions; cannot hold tandem 10 s; chair stand below average for age.<br>
-<b>AMBLE index</b> = simple average of the four parts. The parts are validated; the combined index is AMBLE’s own and is being validated on our clients.<br>
-The joint check (range, MMT), the Indian daily-activity questions, balance in daily life and body measurements are recorded for the clinical file but are not part of the index. Joint pain scores (NPRS) are.</div></details>
-<div class="q"><div class="ql"><span>Key findings</span><em>auto</em></div><div id="jfind"></div><ul class="focus" id="focus" style="margin-top:10px"></ul></div>`;
+ case'results':return`<div class="banner hidden" id="pausePlan"></div><div class="q"><div class="res"><div class="ring"><svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="68" fill="none" stroke="#f0f3f2" stroke-width="11"/><circle id="ringF" cx="80" cy="80" r="68" fill="none" stroke="#2c5a52" stroke-width="11" stroke-linecap="round" stroke-dasharray="427" stroke-dashoffset="427" transform="rotate(-90 80 80)"/></svg><div class="v"><span id="tot">–</span><small>AMBLE score</small></div></div><div><div id="bandW" style="margin-bottom:8px"></div><div class="legendline">Higher % = better. For Pain, 100% means no pain.</div>${[['mob','Mobility'],['str','Strengthening'],['pain','Pain'],['bal','Balance & coordination']].map(([k,l])=>`<div class="bar"><div class="lb"><span>${l}</span><b id="d_${k}">–</b></div><div class="tk"><div class="fl" id="f_${k}" style="width:0"></div></div><div class="bx" id="x_${k}"></div></div>`).join('')}<div class="note" id="vsLast"></div></div></div></div><div class="q"><div class="ql"><span>Key findings</span><em>auto</em></div><ul class="focus" id="scoreNotes" style="margin-bottom:10px"></ul><div id="jfind"></div><ul class="focus" id="focus" style="margin-top:10px"></ul></div>`;
  case'actions':return`<div class="acts no-print"><button type="button" class="btn" id="saveBtn">Save assessment</button><button type="button" class="btn gh" id="copyBtn">Copy summary</button><button type="button" class="btn gh" id="printBtn">Print / PDF</button><button type="button" class="btn gh" id="dlBtn">Download record</button><button type="button" class="btn gh" id="impBtn">Import</button><button type="button" class="btn gh" id="newBtn">New</button></div>`;
  case'progress':return`<div class="q"><div class="ql"><span>Client</span><button type="button" class="btn sm gh" id="demoBtn">Load sample client</button></div><div class="opts" id="clientPick"></div></div><div class="q"><div id="chart"></div><div style="overflow-x:auto"><table class="h" id="hist"></table></div></div><p class="note">History is kept in this browser. In your app, store records on your server.</p>`;
  }
@@ -373,6 +367,9 @@ function entry(k){S.jd[k]=S.jd[k]||{rom:{},mmt:{}};return S.jd[k]}
 function sev(e){if(!e)return 0;let s=0;const p=e.pain||0;if(p>=7)s=3;else if(p>=4)s=2;else if(p>0)s=1;
  Object.values(e.rom||{}).forEach(v=>{s=Math.max(s,v)});Object.values(e.mmt||{}).forEach(v=>{const n=+v;s=Math.max(s,n<=2?3:n===3?2:n===4?1:0)});return s}
 function hasData(e){return e&&((e.pain||0)>0||Object.values(e.rom||{}).some(v=>v>0)||Object.values(e.mmt||{}).some(v=>v!=='5')||(e.note||'').trim())}
+const EDO=[['Easy','10','c1'],['Difficult','6','c2'],['Painful','3','c3'],["Can't",'0','c4']];
+const edLab=v=>(EDO.find(x=>x[1]===String(v))||[''])[0];
+function edo(k){return`<div class="opts">${EDO.map(([l,v,c])=>ob(k,'single',l,v,c)).join('')}</div>`}
 function psc(k){return`<div class="sc">${[...Array(11)].map((_,i)=>ob(k,'single',i,String(i),i<=3?'r':i<=6?'a':'g')).join('')}</div>`}
 const PSQ=['Sitting on the floor (puja / meals)','Using an Indian toilet','Squatting and getting up','Getting up from bed','Turning to look back while walking','Reaching a high shelf on tiptoe','Bending to pick something off the floor','Standing on one leg to dress','Hooking blouse behind back','Going down stairs without the rail','Carrying a tray while walking','Sitting cross-legged and getting up','Getting in and out of a car','Walking on uneven ground or in a crowd','Climbing stairs','Walking 30 minutes'];
 const ABC6=['stand on your tiptoes and reach for something above your head?','stand on a chair and reach for something?','are bumped into by people as you walk through the mall?','step onto or off an escalator while you are holding onto a railing?','step onto or off an escalator while holding onto parcels such that you cannot hold onto the railing?','walk outside on icy sidewalks?'];
@@ -470,13 +467,14 @@ function segDone(i){const s=SEGS[i];if(s.hiddenTab)return false;const has=k=>{co
 const histKey=()=>((S.cid||'').trim()||(S.name||'').trim());
 function recordsFor(){const h=hist(),k=histKey();const own=h[k]||[];return own.filter(x=>!(x.date===S.date&&x.visit===S.visit)).slice().reverse()}
 const CARRY=['ps_t1','ps_t2','ps_t3','ps_t4','ps_t5','name','cid','dob','age','height','cond','cond_other','meds','meds_other','meno','meno_other','activity','sleep','posture','posture_other','dur','ptype','ptype_other','worse','worse_other','stg','stg_other','ltg','ltg_other','tx','tx_other','sessions','sessions_other','otherArea'];
-function loadPrev(rec){const a=JSON.parse(JSON.stringify(rec.answers||{}));
+function loadPrev(rec){const a=JSON.parse(JSON.stringify(rec.answers||{}));Object.keys(a).filter(k=>k.startsWith('cd_')).forEach(k=>{if(S[k]===undefined)S[k]=a[k]});
  S.prev={date:rec.date,visit:rec.visit,total:rec.total,mob:rec.mob,str:rec.str,pain:rec.pain,bal:rec.bal,answers:a};
  CARRY.forEach(k=>{const cur=S[k];if((cur===undefined||cur===''||(Array.isArray(cur)&&!cur.length))&&a[k]!==undefined)S[k]=JSON.parse(JSON.stringify(a[k]))});
  if(!Object.keys(S.jd||{}).length&&a.jd)S.jd=JSON.parse(JSON.stringify(a.jd));
  toast('Previous assessment loaded: '+rec.date)}
 function lastLabel(k,v){if(v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length))return'';
  if(k.startsWith('f_')&&k!=='f_other_txt'){const x=FO.find(o=>String(o[1])===v);return x?x[0]:''}
+ if(/^(pa_|ps_s)/.test(k))return edLab(v);
  if(k.startsWith('lb_')){const x=LO.find(o=>String(o[1])===v);return x?x[0]:''}
  return Array.isArray(v)?v.join(', '):String(v)}
 function renderRe(){
@@ -525,8 +523,8 @@ function update(){
  const pct=T?Math.round(D/T*100):0;$('#pct').textContent=pct+'%';$('#pfill').style.width=pct+'%';
  const r=compute();
  $('#tot').textContent=f0(r.total);$('#ringF').setAttribute('stroke-dashoffset',r.total==null?427:427-427*r.total/100);
- renderMeasure();const X=explain();['mob','str','pain','bal'].forEach(k=>$('#x_'+k).textContent=X[k]);
- ['mob','str','pain','bal'].forEach(k=>{const pv=reMode()&&S.prev?S.prev[k]:null,df=pv!=null&&r[k]!=null?Math.round(r[k]-pv):null;$('#d_'+k).innerHTML=f0(r[k])+(df?` <span class="dl ${df>0?'up':'dn'}">${df>0?'+':''}${df}</span>`:'');$('#f_'+k).style.width=(r[k]||0)+'%'});
+ renderMeasure();const X=explain();['mob','str','pain','bal'].forEach(k=>$('#x_'+k).textContent='');{const sn=$('#scoreNotes');if(sn)sn.innerHTML=[['mob','Mobility'],['str','Strengthening'],['pain','Pain'],['bal','Balance & coordination']].map(([k,l])=>`<li><b>${l}:</b> ${esc(X[k])}</li>`).join('')}
+ ['mob','str','pain','bal'].forEach(k=>{const pv=reMode()&&S.prev?S.prev[k]:null,df=pv!=null&&r[k]!=null?Math.round(r[k]-pv):null;$('#d_'+k).innerHTML=(r[k]==null?'–':Math.round(r[k])+'%')+(df?` <span class="dl ${df>0?'up':'dn'}">${df>0?'+':''}${df}</span>`:'');$('#f_'+k).style.width=(r[k]||0)+'%'});
  if(r.total!=null){const[b,c]=band(r.total);$('#bandW').innerHTML=`<span class="band" style="background:${c}">${b}</span>`;$('#ringF').setAttribute('stroke',c)}else $('#bandW').innerHTML='';
  const JF=r.F.filter(x=>x[0]==='j');$('#jfind').innerHTML=JF.length?`<div class="jboxes">${JF.map(x=>entryBox(x[2],0)).join('')}</div>`:'';
  const OF=r.F.filter(x=>x[0]!=='j');
@@ -538,7 +536,7 @@ function update(){
 function touched(){if(!startT)startT=Date.now();update()}
 
 /* ---------- navigation ---------- */
-function go(i){seg=Math.max(0,Math.min(SEGS.length-1,i));
+function go(i){if(typeof seg!=='undefined'&&SEGS[seg]&&SEGS[seg].id==='pain'&&i!==seg&&startT)S.painChecked=true;seg=Math.max(0,Math.min(SEGS.length-1,i));
  SEGS.forEach((s,k)=>$('#seg_'+s.id).classList.toggle('hidden',k!==seg));
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('cur',+b.dataset.seg===seg));
  $('#curname').textContent=SEGS[seg].hiddenTab?'Progress sheet':`Step ${seg+1} of ${SEGS.length-1} · ${SEGS[seg].n}`;
@@ -605,7 +603,7 @@ function renderHist(sel){
  const rows=h[sel]||[],tb=$('#hist'),ch=$('#chart');
  if(!rows.length){tb.innerHTML='';ch.innerHTML='<p class="note">Save an assessment, or load the sample client.</p>';return}
  const b=rows[0],d=(a,c,dir,m)=>{if(a==null||c==null)return'';const x=c-a;if(Math.abs(x)<.5)return'';const g=dir>0?x>0:x<0;return` <span class="${g?'up':'dn'}">${x>0?'+':''}${Math.round(x)}</span>${g&&Math.abs(x)>=m?'<span class="tag">real</span>':''}`};
- tb.innerHTML='<tr><th>Visit</th><th>AMBLE</th><th>Function</th><th>Strength</th><th>Pain</th><th>Balance</th><th>Max pain</th><th>Weight</th><th>BMI</th><th>Waist</th></tr>'+rows.map((r,i)=>`<tr><td>${esc(r.visit||r.date)}<div class="note">${esc(r.date)}</div></td><td><b>${f0(r.total)}</b>${i?d(b.total,r.total,1,8):''}</td><td>${f0(r.mob)}${i?d(b.mob,r.mob,1,10):''}</td><td>${f0(r.str)}${i?d(b.str,r.str,1,10):''}</td><td>${f0(r.pain)}${i?d(b.pain,r.pain,1,20):''}</td><td>${f0(r.bal)}${i?d(b.bal,r.bal,1,10):''}</td><td>${r.raw.maxPain??'–'}/10${i?d(b.raw.maxPain,r.raw.maxPain,-1,2):''}</td><td>${r.raw.weight??'–'}</td><td>${r.raw.bmi!=null?(+r.raw.bmi).toFixed(1):'–'}</td><td>${r.raw.waist??'–'}</td></tr>`).join('');
+ tb.innerHTML='<tr><th>Visit</th><th>AMBLE</th><th>Mobility</th><th>Strengthening</th><th>Pain</th><th>Balance & coord.</th><th>Max pain</th><th>Weight</th><th>BMI</th><th>Waist</th></tr>'+rows.map((r,i)=>`<tr><td>${esc(r.visit||r.date)}<div class="note">${esc(r.date)}</div></td><td><b>${f0(r.total)}</b>${i?d(b.total,r.total,1,8):''}</td><td>${f0(r.mob)}${i?d(b.mob,r.mob,1,10):''}</td><td>${f0(r.str)}${i?d(b.str,r.str,1,10):''}</td><td>${f0(r.pain)}${i?d(b.pain,r.pain,1,20):''}</td><td>${f0(r.bal)}${i?d(b.bal,r.bal,1,10):''}</td><td>${r.raw.maxPain??'–'}/10${i?d(b.raw.maxPain,r.raw.maxPain,-1,2):''}</td><td>${r.raw.weight??'–'}</td><td>${r.raw.bmi!=null?(+r.raw.bmi).toFixed(1):'–'}</td><td>${r.raw.waist??'–'}</td></tr>`).join('');
  const W=840,H=220,P=36,xs=i=>P+(rows.length===1?(W-2*P)/2:i*(W-2*P)/(rows.length-1)),ys=v=>H-P-(v/100)*(H-2*P-12);
  const ser=[['total','AMBLE','#2c5a52',3],['mob','Mobility','#d4923a',1.6],['str','Strength','#5b7fa6',1.6],['pain','Pain','#c0503f',1.6],['bal','Balance','#3f8a5a',1.6]];
  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;font-family:inherit">`;
@@ -646,7 +644,7 @@ function abcVals(){return[1,2,3,4,5,6].map(i=>S['abc_'+i]).filter(v=>v!==undefin
 function compute(){
  const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));
  const pains=E.map(([k,e])=>e.pain||0).filter(p=>p>0),maxP=pains.length?Math.max(...pains):0;
- const pain=clamp(100-maxP*10);
+ const pain=(E.length||S.painChecked)?clamp(100-maxP*10):null;
  const ps=psfsVals(),psAvg=ps.length?avg(ps):null,mob=psAvg!=null?psAvg*10:null;
  const ch=S.chair_arms==='Yes'?0:(S.chair!=null?S.chair:null),str=ch!=null?clamp(ch/chairRef()*100):null;
  const ab=abcVals(),abAvg=ab.length?avg(ab):null,ss=stageSecs(),stS=ss!=null?ss/40*100:null;
@@ -658,7 +656,7 @@ function compute(){
  if(reMode()&&S.prev){const pj=S.prev.answers.jd||{};Object.keys(pj).filter(x=>hasData(pj[x])&&!hasData((S.jd||{})[x])).forEach(x=>F.push(['g',eName(x)+': resolved since last assessment']));Object.keys(S).filter(x=>x.startsWith('gr_')&&S[x]).forEach(x=>F.push([S[x]==='Not yet'?'a':'g',`Goal “${x.slice(3)}”: ${S[x].toLowerCase()}`]))}
  if(S.otherArea)F.push(['a','Other area: '+S.otherArea]);
  if(pains.length&&(S.ptype||[]).some(x=>x==='Tingling / numb'||x==='Radiating'))F.push(['a','Nerve-type symptoms: neuro screen']);
- PSQ.forEach((a,i)=>{const v=S['pa_'+(i+1)];if(v!==undefined&&+v<10){const wh=(S['pw_'+(i+1)]||[]).join(', '),nt=S['pn_'+(i+1)];F.push([+v<=4?'a':'',`${a}: ${v}/10${wh?' · '+wh:''}${nt?' · '+nt:''}`])}});[1,2].forEach(i=>{const v=S['ps_s'+i];if(v!==undefined&&+v<10)F.push([+v<=4?'a':'',`${S['ps_t'+i]||'Other activity'}: ${v}/10`])});
+ PSQ.forEach((a,i)=>{const v=S['pa_'+(i+1)];if(v!==undefined&&+v<10){const wh=(S['pw_'+(i+1)]||[]).join(', '),nt=S['pn_'+(i+1)];F.push([v==='0'?'r':v==='3'?'a':'',`${a}: ${edLab(v).toLowerCase()}${wh?' · '+wh:''}${nt?' · '+nt:''}`])}});[1,2].forEach(i=>{const v=S['ps_s'+i];if(v!==undefined&&+v<10)F.push([v==='0'?'r':v==='3'?'a':'',`${S['ps_t'+i]||'Other activity'}: ${edLab(v).toLowerCase()}`])});
  const stY=['st_fall','st_unst','st_worry'].filter(k=>S[k]==='Yes');
  if(stY.length)F.push(['a',`STEADI screen positive: ${stY.map(k=>({st_fall:'fallen in past year'+(S.st_times?' ('+S.st_times+(S.st_inj==='Yes'?', injured':'')+')':''),st_unst:'feels unsteady',st_worry:'worries about falling'})[k]).join(' · ')}`]);
  if(S.stage4&&['Unable','Feet together','Semi-tandem'].includes(S.stage4))F.push(['a',`4-Stage Balance: cannot hold tandem 10 s → increased fall risk (CDC)`]);
@@ -667,15 +665,28 @@ function compute(){
  FUNC.forEach(([k,n])=>{const v=S['f_'+k];if(v===undefined||v==='100')return;const lab=v==='0'?'can’t':v==='30'?'painful':'difficult',wh=(S['fw_'+k]||[]).join(', '),nt=S['fn_'+k];F.push([v==='0'?'r':v==='30'?'a':'',`${n}: ${lab}${wh?' · '+wh:''}${nt?' · '+nt:''}`])});
  if(S.f_other!==undefined&&S.f_other!=='100')F.push(['',`${S.f_other_txt||'Other activity'}: ${FO.find(x=>String(x[1])===S.f_other)[0].toLowerCase()}`]);
  LBAL.forEach(([k,n])=>{const v=S['lb_'+k];if(v==='20')F.push(['a',n+': avoids']);else if(v==='60')F.push(['',n+': careful'])});
+ condLines().forEach(l=>F.push(['h','Health: '+l]));
+ {const L=k=>{const v=S[k];if(v===undefined||v===''||(Array.isArray(v)&&!v.length))return'';return(Array.isArray(v)?v:[v]).map(x=>x==='Other'?(S[k+'_other']||'Other'):x).join(', ')};
+  if(anyPain()){const bits=[L('dur')&&'since '+L('dur'),L('trend')&&'getting '+L('trend').toLowerCase(),L('ptype')&&'feels like '+L('ptype').toLowerCase(),L('worse')&&'worse with '+L('worse').toLowerCase()].filter(Boolean);if(bits.length)F.push(['','Pain pattern: '+bits.join(' · ')])}
+  const po=(S.posture||[]).filter(x=>x!=='Neutral');if(po.length)F.push(['','Posture: '+L('posture').replace(/Neutral,? ?/,'')]);
+  if(L('meno'))F.push(['h','Menopause: '+L('meno')]);
+  const md=(S.meds||[]).filter(x=>x!=='None');if(md.length)F.push(['h','Medication: '+L('meds')]);
+  if(S.sleep==='<5 h'||S.sleep==='5–6 h')F.push(['a','Sleep: '+S.sleep+' a night (short)']);else if(S.sleep)F.push(['h','Sleep: '+S.sleep+' a night']);
+  if(S.activity)F.push([S.activity==='Low'?'a':'h','Activity level: '+S.activity]);
+  if(S.stage4==='Single leg')F.push(['g','4-Stage Balance: held single leg 10 s (good static balance)']);
+  if(S.st_fall==='No'&&S.st_unst==='No'&&S.st_worry==='No')F.push(['g','STEADI screen negative: no falls, steady, no fear of falling']);
+  const bi=bmiInfo();if(bi&&bi.cat==='Normal')F.push(['h',`BMI ${bi.b.toFixed(1)} · normal`]);
+  const w=numv('weight'),h=numv('height');if(w||h)F.push(['h',`Body: ${h?'height '+h+' cm':''}${h&&w?' · ':''}${w?'weight '+w+' kg':''}${numv('m_waist')?' · waist '+numv('m_waist')+' cm':''}`]);}
+
  {const bi=bmiInfo();if(bi&&bi.cat!=='Normal')F.push(['a',`BMI ${bi.b.toFixed(1)} · ${bi.cat.toLowerCase()} (Indian cut-offs)`]);const w=numv('m_waist');if(w&&w>=80)F.push(['a',`Waist ${w} cm · above 80 cm`]);}
  return{mob,str,pain,bal,total,F,raw:{maxPain:maxP,psfs:psAvg,chair:ch,abc:abAvg,stageSec:ss,joints:E.length,bmi:(bmiInfo()||{}).b,weight:numv('weight'),waist:numv('m_waist')}};
 }
 function explain(){
  const r=compute(),ps=psfsVals();
  const E=Object.entries(S.jd||{}).filter(([k,e])=>hasData(e));let maxP=0,maxW='';E.forEach(([k,e])=>{if((e.pain||0)>maxP){maxP=e.pain;maxW=eName(k)}});
- return{mob:ps.length?`Average ${r.raw.psfs.toFixed(1)}/10 over ${ps.length} activit${ps.length>1?'ies':'y'}`:'Activities not rated yet',
+ return{mob:ps.length?`${ps.filter(v=>v<10).length} of ${ps.length} activities not easy`:'Activities not rated yet',
   str:r.raw.chair!=null?`${r.raw.chair} stands in 30 s · reference ${chairRef()} for her age${S.chair_arms==='Yes'?' · used arms':''}`:'Chair stand not done yet',
-  pain:maxP?`Highest pain ${maxP}/10 (${maxW})`:'No pain recorded',
+  pain:maxP?`Highest pain ${maxP}/10 (${maxW})`:(r.pain==null?'Pain & movement not checked yet':'No pain recorded'),
   bal:r.raw.stageSec!=null?`4-Stage: ${S.stage4.toLowerCase()} · ${r.raw.stageSec.toFixed(1)} of 40 s held`:'Balance test not done yet'}}
 function segDone(i){const s=SEGS[i];if(s.hiddenTab)return false;const has=k=>{const v=S[k];return Array.isArray(v)?v.length>0:v!==undefined&&v!==''};const checks=[];
  s.items.forEach(it=>{(it.row||[it]).forEach(x=>{if(x.req&&vis(x))checks.push(has(x.k))});
@@ -697,7 +708,23 @@ document.addEventListener('click',e=>{const sp=e.target.closest('[data-step]');i
  const f=e.target.closest('[data-psfill]');if(f){for(let i=1;i<=5;i++){if(!(S['ps_t'+i]||'').trim()){S['ps_t'+i]=f.dataset.psfill;break}}touched();return}
  if(e.target.closest('#chairT')){clearInterval(vcd);let t=30;const c=$('#chairClock');c.style.color='';c.textContent=t+'s';if(!startT)startT=Date.now();vcd=setInterval(()=>{t--;c.textContent=t>0?t+'s':'Stop';if(t<=0){clearInterval(vcd);c.style.color='var(--bad)'}},1000)}});
 document.addEventListener('amble:change',()=>{document.querySelectorAll('[data-fwp]').forEach(el=>{const v=S['pa_'+el.dataset.fwp];el.classList.toggle('hidden',v===undefined||v==='10')});renderPsScript();const cv=$('#chairV');if(cv)cv.textContent=S.chair_arms==='Yes'?'0':(S.chair??'–')});
-renderPsScript();update();
+
+/* ---------- condition details ---------- */
+const CD_EVENT={'Fracture history':'Which bone, and when?','Surgery history':'What surgery, and when?','Recent fall / injury':'What happened, and when?','Hysterectomy':'When, and were the ovaries removed?'};
+const ckey=c=>'cd_'+c.replace(/[^a-z0-9]+/gi,'_');
+let condSig='';
+function renderCond(){const box=$('#condDetail');if(!box)return;const sel=(S.cond||[]).filter(c=>c!=='None');const sig=sel.join('|');if(sig===condSig)return;condSig=sig;
+ box.innerHTML=sel.length?`<div class="q" style="background:var(--soft)"><div class="ql"><span>Details</span><em>for each condition ticked</em></div>${sel.map(c=>{const k=ckey(c),name=c==='Other'?(S.cond_other||'Other condition'):c,ev=CD_EVENT[c];
+  return`<div class="tr" style="grid-template-columns:170px 1fr;align-items:start"><div class="nm" style="padding-top:8px">${esc(name)}</div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+   <div style="display:flex;align-items:center;gap:6px"><input type="number" data-k="${k}_yrs" min="0" max="80" step="1" placeholder="–" style="width:70px"><span class="note">${ev?'years ago':'years'}</span></div>
+   ${ev?'':`<span class="note">Medication</span>${ob(k+'_med','single','Yes','Yes')}${ob(k+'_med','single','No','No')}`}
+   <input type="text" data-k="${k}_note" placeholder="${esc(ev||'Notes (medicine name, dose, control…)')}" maxlength="200" style="flex:1;min-width:200px"></div></div>`}).join('')}</div>`:'';
+ box.querySelectorAll('button[data-k]').forEach(b=>b.classList.toggle('on',S[b.dataset.k]===b.dataset.v));
+ box.querySelectorAll('input[data-k]').forEach(i=>i.value=S[i.dataset.k]??'')}
+function condLines(){return(S.cond||[]).filter(c=>c!=='None').map(c=>{const k=ckey(c),y=S[k+'_yrs'],m=S[k+'_med'],n=S[k+'_note'],name=c==='Other'?(S.cond_other||'Other condition'):c;
+ return`${name}${y!==undefined&&y!==''?' · '+y+(CD_EVENT[c]?' yrs ago':' yrs'):''}${m==='Yes'?' · on medication':m==='No'?' · no medication':''}${n?' · '+n:''}`})}
+document.addEventListener('amble:change',renderCond);
+renderPsScript();update();renderCond();
 window.Amble=Object.freeze({schema:SCHEMA,getData,setData,reset,score:compute});
 </script>
 </body>
