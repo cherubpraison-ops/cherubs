@@ -320,6 +320,16 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .sc{width:22px;height:22px;border-radius:6px;display:inline-grid;place-items:center;font-weight:700;cursor:pointer;font-size:12px}
 .sc.s-done{background:var(--ok);color:#fbf3e7}.sc.s-skip{background:rgba(201,71,58,.15);color:var(--danger)}.sc.s-moved{background:var(--soft);color:var(--accent)}
 .sc.s-add{color:var(--line);font-weight:400}.sc.s-add:hover{color:var(--accent);background:var(--soft)}
+.reg tr.grp td{background:var(--panel2);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);padding:8px 12px}
+.reg tr.grp .cn{background:var(--panel2)}
+.reg tr.sub td{font-weight:700;background:var(--glow)}.reg tr.sub .cn{background:var(--glow)}
+.sumcard{margin-top:14px}
+.sumt{width:100%;border-collapse:collapse;font-size:14px}
+.sumt th{text-align:left;color:var(--muted);font-weight:600;padding:9px 6px}
+.sumt td{text-align:right;padding:9px 6px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;font-weight:600}
+.sumt td.hd{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-top:0}
+.sumt td.gt{background:var(--soft);color:var(--text)}.sumt td.big{font-size:16px;font-weight:700}
+.sumt td.grn{color:var(--ok)}.sumt td.red{color:var(--danger)}
 .sc.s-demo{background:var(--soft)!important;color:var(--accent)!important}
 .sc.s-late{border:1.5px solid var(--warn);color:var(--warn)}.sc.s-plan{color:var(--muted)}
 
@@ -707,13 +717,22 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
    if(st==='done')dn++;if(st==='skip')cx++;
    const demo=isDemo(c,d),sym=demo&&st==='done'?'D':st==='done'?'✓':st==='skip'?'✕':st==='moved'?'↻':d<t?'?':'·';
    return`<td class="${d===t?'tc':''}"><span class="sc s-${st==='pending'?(d<t?'late':'plan'):st}${demo?' s-demo':''}" title="${st==='skip'&&x.s&&x.s.reason?esc(x.s.reason):''}" data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}">${sym}</span></td>`}).join('');
-  const bs=allBills(c.id).filter(b=>b.from<=end&&b.to>=ym+'-01'),paid=bs.filter(b=>b.paid).reduce((a,b)=>a+b.amount,0),unpaid=bs.filter(b=>!b.paid).reduce((a,b)=>a+b.amount,0);
-  return{c,dn,cx,K,cells,earned:(M.per[c.id]||{a:0}).a,paid,unpaid}});
+   const bs=allBills(c.id).filter(b=>b.from.slice(0,7)===ym),paid=bs.filter(b=>b.paid).reduce((a,b)=>a+b.amount,0),unpaid=bs.filter(b=>!b.paid).reduce((a,b)=>a+b.amount,0);
+   return{c,dn:K.done,cx,K,cells,earned:(M.per[c.id]||{a:0}).a,paid,unpaid,grp:c.pay==='monthly'?'m':c.pay==='package'?'p':'w'}});
  ui._sheetRows=rows;ui._sheetDays=days;
  return`<header class="top"><div><div class="eyebrow">Session register</div><h1>${monthLabel(ym)}</h1></div><div style="display:flex;gap:4px"><button class="icon-btn lg" data-act="shMove" data-n="-1">${ic('left')}</button><button class="icon-btn lg" data-act="shMove" data-n="1">${ic('right')}</button></div></header>
  ${cs.length?`<div class="card sheetwrap"><table class="reg"><thead><tr><th class="cn">Client</th>${days.map(d=>`<th class="${d===t?'tc':''}"><span>${'SMTWTFS'[parseD(d).getDay()]}</span>${+d.slice(8)}</th>`).join('')}<th>Planned</th><th>Done</th><th>Canc.</th><th>To do</th><th>Earned</th><th>Paid</th><th>Unpaid</th></tr></thead>
- <tbody>${rows.map(r=>`<tr><td class="cn"><button data-act="openClient" data-id="${r.c.id}"><i style="background:${esc(r.c.color||COLORS[0])}"></i>${esc(r.c.name)}</button></td>${r.cells}<td class="nm">${r.K.planned}</td><td class="nm grn">${r.dn}</td><td class="nm red">${r.cx}</td><td class="nm">${r.K.todo+r.K.unmarked}</td><td class="nm">${money(r.earned)}</td><td class="nm grn">${money(r.paid)}</td><td class="nm ${r.unpaid?'red':''}">${money(r.unpaid)}</td></tr>`).join('')}
- <tr class="tot"><td class="cn">Total</td>${days.map(()=>'<td></td>').join('')}<td class="nm">${rows.reduce((a,r)=>a+r.K.planned,0)}</td><td class="nm grn">${rows.reduce((a,r)=>a+r.dn,0)}</td><td class="nm red">${rows.reduce((a,r)=>a+r.cx,0)}</td><td class="nm">${rows.reduce((a,r)=>a+r.K.todo+r.K.unmarked,0)}</td><td class="nm">${money(rows.reduce((a,r)=>a+r.earned,0))}</td><td class="nm grn">${money(rows.reduce((a,r)=>a+r.paid,0))}</td><td class="nm red">${money(rows.reduce((a,r)=>a+r.unpaid,0))}</td></tr></tbody></table></div>
+  <tbody>${(()=>{const G=[['w','Weekly-paying clients'],['m','Monthly-paying clients'],['p','Package clients']],sum=(R,f)=>R.reduce((a,r)=>a+f(r),0),nc=days.length;
+   const line=r=>`<tr><td class="cn"><button data-act="openClient" data-id="${r.c.id}"><i style="background:${esc(r.c.color||COLORS[0])}"></i>${esc(r.c.name)}</button></td>${r.cells}<td class="nm">${r.K.planned}</td><td class="nm grn">${r.dn}</td><td class="nm red">${r.cx}</td><td class="nm">${r.K.todo+r.K.unmarked}</td><td class="nm">${money(r.earned)}</td><td class="nm grn">${money(r.paid)}</td><td class="nm ${r.unpaid?'red':''}">${money(r.unpaid)}</td></tr>`;
+   const tot=(lab,R,cls)=>`<tr class="${cls}"><td class="cn">${lab}</td>${'<td></td>'.repeat(nc)}<td class="nm">${sum(R,r=>r.K.planned)}</td><td class="nm grn">${sum(R,r=>r.dn)}</td><td class="nm red">${sum(R,r=>r.cx)}</td><td class="nm">${sum(R,r=>r.K.todo+r.K.unmarked)}</td><td class="nm">${money(sum(R,r=>r.earned))}</td><td class="nm grn">${money(sum(R,r=>r.paid))}</td><td class="nm red">${money(sum(R,r=>r.unpaid))}</td></tr>`;
+   return G.filter(([g])=>rows.some(r=>r.grp===g)).map(([g,l])=>{const R=rows.filter(r=>r.grp===g);return`<tr class="grp"><td class="cn">${l}</td><td colspan="${nc+7}"></td></tr>${R.map(line).join('')}${tot(l.split(' ')[0]+' total',R,'sub')}`}).join('')+tot('Grand total',rows,'tot')})()}</tbody></table></div>
+  ${(()=>{const sum=(R,f)=>R.reduce((a,r)=>a+f(r),0),W=rows.filter(r=>r.grp==='w'),Mo=rows.filter(r=>r.grp==='m'),P=rows.filter(r=>r.grp==='p');
+   const col=(R)=>({n:R.length,done:sum(R,r=>r.dn),earned:sum(R,r=>r.earned),paid:sum(R,r=>r.paid),unpaid:sum(R,r=>r.unpaid)});const cw=col(W),cm=col(Mo),cp=col(P),ct=col(rows);
+   const cols=[['Weekly',cw],['Monthly',cm]].concat(P.length?[['Package',cp]]:[]).concat([['Total',ct]]);
+   const tr=(l,k,f,cls)=>`<tr><th>${l}</th>${cols.map(([n,c],i)=>`<td class="${cls||''} ${i===cols.length-1?'gt':''}">${f(c[k])}</td>`).join('')}</tr>`;
+   return`<section class="card pad sumcard"><div class="sec-h"><h3>${monthLabel(ym)} · money summary</h3></div><table class="sumt"><tr><th></th>${cols.map(([n],i)=>`<td class="hd ${i===cols.length-1?'gt':''}">${n}</td>`).join('')}</tr>
+    ${tr('Clients','n',v=>v)}${tr('Sessions done','done',v=>v)}${tr('Revenue (earned)','earned',money,'big')}${tr('Paid','paid',money,'grn')}${tr('Unpaid','unpaid',money,'red')}</table>
+    <div class="muted sm" style="margin-top:8px">Revenue = weekly clients’ completed sessions × their fee, plus monthly clients’ fee for this month (part-month if they started mid-month). Demos are free.</div></section>`})()}
  <div class="muted sm" style="margin:10px 4px">✓ visited · D demo (free) · ✕ cancelled · ↻ rescheduled · ? not marked · + add a session on any day · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
  <button class="btn" data-act="copySheet">Copy sheet (paste into Excel / Google Sheets)</button>`
  :emptyBig('📋','No clients yet','Add clients and their visits will fill this register.')}`};
