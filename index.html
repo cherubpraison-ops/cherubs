@@ -385,6 +385,7 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .as-client{font-family:Fraunces,serif;font-size:20px;margin:22px 4px 10px}
 .print-title{display:none}
 @media print{.side,.bottom,.mic-fab,.no-print,.note-bar,#alerts,#toast{display:none!important}body::before{display:none}body{background:#fff;color:#000}main{padding:0!important;max-width:none}.print-title{display:block;margin-bottom:10px}.asdoc{box-shadow:none;break-inside:avoid;border-color:#ccc;background:#fff}.as-client{break-before:page}.as-client:first-of-type{break-before:auto}}
+.pl-link{font-size:12.5px;background:var(--panel2);border-radius:10px;padding:10px;word-break:break-all;color:var(--text);font-weight:500}
 @media(max-width:900px){.cal-wrap,.money-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){
  .side{display:none}
@@ -663,7 +664,7 @@ VIEWS.money=()=>{
  return`<header class="top"><div><div class="eyebrow">Money</div><h1>${monthLabel(ym)}</h1></div><div style="display:flex;gap:4px"><button class="icon-btn lg" data-act="monMove" data-n="-1">${ic('left')}</button><button class="icon-btn lg" data-act="monMove" data-n="1">${ic('right')}</button></div></header>
  <div class="stats"><div class="card stat"><div class="l">Spent</div><div class="v">${money(st.out)}</div></div><div class="card stat"><div class="l">Income</div><div class="v" style="color:var(--ok)">${money(st.inc)}</div></div><div class="card stat"><div class="l">Net</div><div class="v">${money(st.inc-st.out)}</div></div>
  <div class="card stat"><div class="l">Budget</div>${bud?`<div class="v">${money(Math.max(bud-st.out,0))}<span class="muted sm" style="font-weight:500"> left</span></div><div class="meter"><i class="${st.out>bud?'over':''}" style="width:${Math.min(100,st.out/bud*100)}%"></i></div>`:`<div class="sm muted" style="margin-top:6px"><a href="#prefs" style="color:var(--accent)">Set a monthly budget</a></div>`}</div></div>
- <div class="addbar"><button class="btn primary" data-act="newExp" data-t="out">${ic('plus')}Expense</button><button class="btn" data-act="newExp" data-t="in">${ic('plus')}Income</button></div>
+ <div class="addbar"><button class="btn" data-act="payLink">💳 Payment link</button><button class="btn primary" data-act="newExp" data-t="out">${ic('plus')}Expense</button><button class="btn" data-act="newExp" data-t="in">${ic('plus')}Income</button></div>
  <div class="money-grid"><section class="card pad"><div class="sec-h"><h3>Where it went</h3></div>${cats.length?cats.map(([c,a])=>`<div class="catrow"><span class="ell">${CAT_EMOJI[c]||'•'} ${esc(c)}</span><div class="meter"><i style="width:${a/max*100}%"></i></div><span class="amt">${money(a)}</span></div>`).join(''):'<div class="empty">No spending this month.</div>'}</section>
  <section class="card pad"><div class="sec-h"><h3>Transactions</h3><span class="muted sm">${txs.length}</span></div>${txs.length?Object.keys(byDate).map(d=>`<div class="group-h" style="margin-top:8px">${dueLabel(d)}</div>${byDate[d].map(x=>`<div class="tx" data-act="${x._pay?'editPay':'editExp'}" data-id="${x.id}"><span class="em">${CAT_EMOJI[x.cat]||'•'}</span><div class="grow"><div class="row-t ell">${esc(x.note||x.cat||'')}</div><div class="muted sm">${esc(x.cat||'')}${x.method?' · '+esc(x.method):''}</div></div><span class="a ${x.type==='in'?'in':''}">${x.type==='in'?'+':'−'}${money(x.amount)}</span></div>`).join('')}`).join(''):'<div class="empty">Add your first expense — it takes 5 seconds.</div>'}</section></div>`;
 };
@@ -785,6 +786,8 @@ VIEWS.prefs=()=>{
  <section class="card pad"><h3>Money</h3>
  <label class="fld half"><span>Currency</span><select data-ch="pref" data-k="currency">${['INR','USD','EUR','GBP','AED','SGD','AUD','CAD'].map(c=>`<option ${p.currency===c?'selected':''}>${c}</option>`).join('')}</select></label>
  <label class="fld half"><span>Monthly budget</span><input type="number" inputmode="decimal" data-ch="pref" data-k="budget" value="${esc(p.budget||'')}" placeholder="0 = no budget"></label>
+ <label class="fld half"><span>Your UPI ID (for payment links)</span><input data-ch="pref" data-k="upi" value="${esc(p.upi||'')}" placeholder="e.g. yourname@okaxis" autocapitalize="off" autocomplete="off"></label>
+ <label class="fld half"><span>Name shown to clients</span><input data-ch="pref" data-k="upiName" value="${esc(p.upiName||'')}" placeholder="e.g. Cherub Praison"></label>
  <label class="fld"><span>Expense categories (comma separated)</span><input data-ch="pref" data-k="cats" value="${esc(p.cats)}"></label></section>
  <section class="card pad"><h3>Your data</h3>
  <div class="fld muted" style="font-weight:500">${Store.mode==='cloud'?'Everything is saved in your private Cherub database and syncs across your iPhone and Mac. Only your account can read it.':'Saved in this browser only.'} You have ${Store.items.size} items.</div>
@@ -1001,7 +1004,7 @@ function billSub(b){return b.kind==='month'?'Monthly fee · paid in advance':`${
 function billBox(b){const a=`data-b="${esc(b.id)}"`;
  return`<div class="card bbox ${b.paid?'paid':''}"><div class="cbox-h">${av(b.c)}<div class="grow"><div class="cbox-n">${esc(b.c.name)}</div><div class="row-m"><span>${billTitle(b)}</span><span>${billSub(b)}</span></div></div><div class="bamt">${money(b.amount)}</div></div>
  <div class="sact2">${b.paid?`<button class="schip st-done" data-act="billUndo" ${a}>✓ Paid ${b.doc&&b.doc.paidOn?dueLabel(b.doc.paidOn).toLowerCase():''}<span class="u">Undo</span></button><span class="grow"></span><button class="btn sm ghost" data-act="billSend" ${a}>View</button>`
-  :`<button class="btn sm okb" data-act="billPaid" ${a}>${ic('check')}Paid</button><button class="btn sm" data-act="billLater" ${a}>⏰ Remind me later</button>`}</div>${b.paid?'':billNote(b)}</div>`}
+  :`<button class="btn sm okb" data-act="billPaid" ${a}>${ic('check')}Paid</button><button class="btn sm" data-act="billLater" ${a}>⏰ Later</button><button class="btn sm" data-act="payLink" ${a} title="Payment link" aria-label="Payment link">💳 Pay link</button>`}</div>${b.paid?'':billNote(b)}</div>`}
 function billNote(b){const t=today(),due=b.kind==='week'?b.sun:addDays(b.from,-1),late=Math.round((parseD(t)-parseD(due))/864e5),f=b.doc&&b.doc.status==='later'?b.doc.followUp:'';
  const parts=[];if(late>0)parts.push(`Waiting ${late} day${late===1?'':'s'}`);if(f)parts.push(`⏰ I’ll remind you ${dueLabel(f).toLowerCase()}`);return parts.length?`<div class="bnote">${parts.join(' · ')}</div>`:''}
 function weekStrip(c){const t=today(),mon=weekStartOf(t);let h='';
@@ -1131,7 +1134,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
  <div class="stats"><div class="card stat"><div class="l">This month</div><div class="v">${mDone}<span class="muted sm" style="font-weight:500"> / ${mSched} done</span></div></div>
  <div class="card stat"><div class="l">${m.due<0?'Advance':'Due'}</div><div class="v" style="color:${m.due>0?'var(--danger)':'var(--ok)'}">${money(Math.abs(m.due))}</div></div>
  <div class="card stat"><div class="l">Total paid</div><div class="v">${money(m.paid)}</div></div><div class="card stat"><div class="l">${third[0]}</div><div class="v">${third[1]}</div></div></div>
- <div class="addbar" style="flex-wrap:wrap"><button class="btn primary" data-act="payClient" data-id="${c.id}">${ic('plus')}Record payment</button><button class="btn" data-act="pauseClient" data-id="${c.id}">${c.active===false?'Resume client':'Pause client'}</button>${c.phone?`<a class="btn" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a>`:''}</div>
+ <div class="addbar" style="flex-wrap:wrap"><button class="btn" data-act="payLink" data-c="${c.id}">💳 Payment link</button><button class="btn primary" data-act="payClient" data-id="${c.id}">${ic('plus')}Record payment</button><button class="btn" data-act="pauseClient" data-id="${c.id}">${c.active===false?'Resume client':'Pause client'}</button>${c.phone?`<a class="btn" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a>`:''}</div>
  ${calcHtml(c)}
  ${assessHtml(c)}
  <div class="money-grid"><section class="card pad"><div class="sec-h"><h3>Sessions</h3><span class="muted sm">last 30 days</span></div>${hist.length?hist.map(x=>sessRow(x,true)).join(''):'<div class="empty">No sessions yet.</div>'}
@@ -1259,6 +1262,24 @@ async function testNotification(){
  if(Notification.permission!=='granted'){const r=await setupPush(true);if(r!=='granted'){toast('Allow notifications first');return}}
  try{const reg=Store.swReg||await navigator.serviceWorker.ready;await reg.showNotification('Cherub’s OS',{body:'✅ Notifications are working on this device.',icon:'icon-192.png',badge:'icon-192.png'})}catch(e){}
  try{await Store.db.collection('users').doc(Store.uid).collection('meta').doc('test').set({at:Date.now()});toast('Test sent ✓ — a second one comes from the server within ~15 minutes')}catch(e){toast('Test shown on this device')}}
+// ---------- UPI payment links ----------
+function payUrl(amount,note){const p=prefs(),base=location.origin+location.pathname.replace(/[^/]*$/,'');
+ return base+'pay.html?'+['pa='+encodeURIComponent((p.upi||'').trim()),'pn='+encodeURIComponent((p.upiName||p.name||'').trim()),Number(amount)>0?'am='+Number(amount):'',note?'tn='+encodeURIComponent(note):''].filter(Boolean).join('&')}
+function openPayLink(o){ui.checkinOpen=false;const p=prefs();
+ if(!/^[\w.\-]{2,}@[\w]{2,}$/.test((p.upi||'').trim())){openForm({title:'Your UPI ID',fields:[{k:'upi',label:'UPI ID (from GPay → Profile)',ph:'yourname@okaxis',req:1},{k:'upiName',label:'Name shown to clients',def:p.name||''}],values:p,
+  validate:v=>/^[\w.\-]{2,}@[\w]{2,}$/.test(v.upi)?null:'That doesn’t look like a UPI ID (it has an @)',onSave:v=>{put({...prefs(),upi:v.upi,upiName:v.upiName});setTimeout(()=>openPayLink(o),50)}});return}
+ const c=o.c||null,m=$('#modal');
+ m.innerHTML=`<div class="scrim" data-act="closeModal"></div><div class="sheet" style="grid-template-columns:1fr 1fr"><div class="sheet-h"><h3>💳 Payment link${c?' · '+esc(c.name):''}</h3><button class="icon-btn" data-act="closeModal" aria-label="Close">✕</button></div>
+ <label class="fld half"><span>Amount (₹)</span><input type="number" inputmode="decimal" id="plAmt" value="${o.amount||''}" placeholder="0"></label>
+ <label class="fld half"><span>For</span><input id="plNote" value="${esc(o.note||'')}" placeholder="e.g. Week 23–29 Nov"></label>
+ <div class="fld"><span>Link</span><div class="pl-link" id="plLink"></div></div>
+ <div class="fld muted" style="font-weight:500">Pays straight to <b>${esc(p.upi)}</b> (${esc(p.upiName||p.name||'')}) through GPay, PhonePe, Paytm or any UPI app.</div>
+ <div class="sheet-f" style="flex-wrap:wrap"><a class="btn" id="plWa" target="_blank" rel="noopener">WhatsApp</a><button class="btn" data-act="plCopy">Copy</button>${navigator.share?'<button class="btn" data-act="plShare">Share</button>':''}<span class="grow"></span><a class="btn primary" id="plOpen" target="_blank" rel="noopener">Preview</a></div></div>`;
+ m.classList.add('open');ui.pl={c};
+ const upd=()=>{const a=$('#plAmt').value,n=$('#plNote').value.trim(),u=payUrl(a,n);ui.pl.url=u;$('#plLink').textContent=u;$('#plOpen').href=u;
+  const msg=`Hi ${c?c.name.split(' ')[0]:''},\nHere is the payment link${n?' for '+n:''}${Number(a)>0?': '+money(a):''}\n${u}\n\nTap it to pay by GPay / PhonePe / any UPI app. Thank you!\n— ${prefs().upiName||prefs().name||''}`;ui.pl.msg=msg;
+  const ph=c?(c.phone||'').replace(/\D/g,''):'';$('#plWa').href='https://wa.me/'+(ph.length===10?'91'+ph:ph)+'?text='+encodeURIComponent(msg)};
+ $('#plAmt').addEventListener('input',upd);$('#plNote').addEventListener('input',upd);upd()}
 // ---------- voice ----------
 function setupVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;let rec=null,act=false;const h={p:[],f:[],s:[]};
  const d={start(){return new Promise((res,rej)=>{try{rec=new SR();rec.lang='en-IN';rec.interimResults=true;rec.continuous=true;
@@ -1363,6 +1384,10 @@ const VOICE_ACT={
 // ---------- events ----------
 function pushStateText(){if(!pushSupported())return /iPhone|iPad/.test(navigator.userAgent)&&!isStandalone()?'On iPhone, add Cherub to your Home Screen and open it from there to turn on notifications.':'This browser can’t show notifications.';const p=Notification.permission;return p==='granted'?'On ✓ — you’ll get the evening check-in, Sunday advances, month-end fee and your reminders.':p==='denied'?'Blocked. Allow notifications for Cherub in your device settings.':'Off. Tap the button to turn them on for this device.'}
 const ACT={...CLIENT_ACT,...VOICE_ACT,
+ payLink(el){if(el.dataset.b){const b=getBill(el.dataset.b);if(b)return openPayLink({c:b.c,amount:b.amount,note:billTitle(b).replace(/ \(part month.*\)/,'')})}
+  const c=el.dataset.c?get(el.dataset.c):null;let amount='',note='';if(c){const u=allBills(c.id).filter(x=>!x.paid).sort((x,y)=>x.from<y.from?-1:1)[0];if(u){amount=u.amount;note=billTitle(u).replace(/ \(part month.*\)/,'')}}openPayLink({c,amount,note})},
+ plCopy(){const u=ui.pl&&ui.pl.msg;if(!u)return;navigator.clipboard.writeText(ui.pl.msg).then(()=>toast('Message with link copied ✓')).catch(()=>toast('Couldn’t copy — use Share or WhatsApp'))},
+ plShare(){if(ui.pl&&navigator.share)navigator.share({text:ui.pl.msg}).catch(()=>{})},
  asLib(){ui.asView='list';ui.asFilter='all';go('assessments')},
  asFile(){ui.asView='file';if(ui.route!=='assessments')ui.asFilter='all';go('assessments');if(ui.route==='assessments')render()},
  asList(){ui.asView='list';render()},
