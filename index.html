@@ -522,7 +522,7 @@ function readHash(){const h=location.hash.slice(1);if(h==='checkin')ui.wantCk=tr
 function go(r){if(location.hash.slice(1)!==r)location.hash=r;else{ui.route=r;render()}}
 window.addEventListener('hashchange',()=>{readHash();closeModal();render();window.scrollTo(0,0)});
 
-function applyTheme(){const t=prefs().theme;const night=t==='night'||t==='dark'||((t==='auto'||t==='light'||!t)&&matchMedia('(prefers-color-scheme: dark)').matches&&t!=='light');document.documentElement.dataset.theme=night?'night':'day'}
+function applyTheme(){const P=prefs(),t=P.theme;if(t==='timed'){const hm=nowLocal().slice(11),ds=P.dayStart||'06:00',ns=P.nightStart||'19:00';const nt=ds<ns?(hm<ds||hm>=ns):(hm>=ns&&hm<ds);document.documentElement.dataset.theme=nt?'night':'day';return}const night=t==='night'||t==='dark'||((t==='auto'||t==='light'||!t)&&matchMedia('(prefers-color-scheme: dark)').matches&&t!=='light');document.documentElement.dataset.theme=night?'night':'day'}
 function render(){
  Store.needRender=false;applyTheme();
  const app=$('#app');
@@ -750,7 +750,8 @@ VIEWS.prefs=()=>{
  return`<header class="top"><div><div class="eyebrow">Cherub’s OS</div><h1>Settings</h1></div></header><div class="prefs">
  <section class="card pad"><h3>You</h3>
  <label class="fld half"><span>Name</span><input data-ch="pref" data-k="name" value="${esc(p.name)}"></label>
- <label class="fld half"><span>Look</span><select data-ch="pref" data-k="theme">${[['auto','Auto (day / night from phone)'],['day','Day — soft sand'],['night','Night — warm espresso']].map(([v,l])=>`<option value="${v}" ${(p.theme==='light'?'auto':p.theme)===v?'selected':''}>${l}</option>`).join('')}</select></label>
+ <label class="fld half"><span>Look</span><select data-ch="pref" data-k="theme">${[['timed','Timed (Cherub’s own clock)'],['auto','Auto (follows phone dark mode)'],['day','Day — soft sand'],['night','Night — warm espresso']].map(([v,l])=>`<option value="${v}" ${(p.theme==='light'?'auto':p.theme)===v?'selected':''}>${l}</option>`).join('')}</select></label>
+ ${p.theme==='timed'?`<label class="fld half"><span>Day look from</span><input type="time" data-ch="pref" data-k="dayStart" value="${esc(p.dayStart||'06:00')}"></label><label class="fld half"><span>Night look from</span><input type="time" data-ch="pref" data-k="nightStart" value="${esc(p.nightStart||'19:00')}"></label>`:''}
  <label class="fld half"><span>Tomorrow’s sessions reminder at</span><input type="time" data-ch="pref" data-k="preview" value="${esc(p.preview||'21:00')}"></label>
  <label class="fld half"><span>Daily session check-in at</span><input type="time" data-ch="pref" data-k="checkin" value="${esc(p.checkin||'19:00')}"></label></section>
  <section class="card pad"><h3>📋 Assessments</h3><div class="fld muted" style="font-weight:500">${all('assessment').length} completed assessment${all('assessment').length===1?'':'s'} across ${new Set(all('assessment').map(a=>a.clientId)).size} client${new Set(all('assessment').map(a=>a.clientId)).size===1?'':'s'}.</div>
@@ -1425,6 +1426,7 @@ function checkAlerts(){const box=$('#alerts');if(!Store.ready){box.innerHTML='';
  const due=all('reminder').filter(r=>!r.done&&r.at&&r.at<=now&&r.at>=from&&!dismissed.has(r.id+r.at)).sort(byAt).slice(0,3);
  setTimeout(maybePrompt,800);box.innerHTML=due.map(r=>`<div class="alert">${ic('bell')}<div class="grow"><b>${esc(r.title)}</b><div class="muted sm">${fmtAt(r.at)}</div></div><button class="btn sm" data-act="alertSnooze" data-id="${r.id}">10 min</button><button class="btn sm primary" data-act="alertDone" data-id="${r.id}">Done</button><button class="icon-btn" data-act="alertX" data-id="${r.id}" aria-label="Dismiss">✕</button></div>`).join('')}
 setInterval(checkAlerts,20000);
+setInterval(()=>{if(prefs().theme==='timed'){const b=document.documentElement.dataset.theme;applyTheme();if(b!==document.documentElement.dataset.theme)render()}},60000);
 setInterval(maybePrompt,30000);
 
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
