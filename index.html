@@ -320,6 +320,7 @@ a.btn[href*='wa.me']{background:#5f8a62;color:#fbf3e7;border-color:transparent}
 .sc{width:22px;height:22px;border-radius:6px;display:inline-grid;place-items:center;font-weight:700;cursor:pointer;font-size:12px}
 .sc.s-done{background:var(--ok);color:#fbf3e7}.sc.s-skip{background:rgba(201,71,58,.15);color:var(--danger)}.sc.s-moved{background:var(--soft);color:var(--accent)}
 .sc.s-add{color:var(--line);font-weight:400}.sc.s-add:hover{color:var(--accent);background:var(--soft)}
+.sc.s-demo{background:var(--soft)!important;color:var(--accent)!important}
 .sc.s-late{border:1.5px solid var(--warn);color:var(--warn)}.sc.s-plan{color:var(--muted)}
 
 .mic-fab{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:15;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--onacc);box-shadow:0 6px 18px rgba(60,35,15,.3);border:2px solid var(--solid)}
@@ -704,8 +705,8 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
  const M=earnStats(ym+'-01',end,true);
  const r_id=x=>x;const rows=cs.map(c=>{let dn=0,cx=0;const K=monthCalc(c,ym);const cells=days.map(d=>{const xs=sessionsOn(d,c.id);if(!xs.length)return`<td class="${d===t?'tc':''}">${d<=t?`<span class="sc s-add" data-act="sMore" data-sid="r_${r_id(c.id)}_${d}" data-c="${c.id}" data-d="${d}" title="Add a session">+</span>`:''}</td>`;const x=xs[0],st=stOf(x);
    if(st==='done')dn++;if(st==='skip')cx++;
-   const sym=st==='done'?'✓':st==='skip'?'✕':st==='moved'?'↻':d<t?'?':'·';
-   return`<td class="${d===t?'tc':''}"><span class="sc s-${st==='pending'?(d<t?'late':'plan'):st}" title="${st==='skip'&&x.s&&x.s.reason?esc(x.s.reason):''}" data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}">${sym}</span></td>`}).join('');
+   const demo=isDemo(c,d),sym=demo&&st==='done'?'D':st==='done'?'✓':st==='skip'?'✕':st==='moved'?'↻':d<t?'?':'·';
+   return`<td class="${d===t?'tc':''}"><span class="sc s-${st==='pending'?(d<t?'late':'plan'):st}${demo?' s-demo':''}" title="${st==='skip'&&x.s&&x.s.reason?esc(x.s.reason):''}" data-act="sMore" data-sid="${esc(x.id)}" data-c="${c.id}" data-d="${d}">${sym}</span></td>`}).join('');
   const bs=allBills(c.id).filter(b=>b.from<=end&&b.to>=ym+'-01'),paid=bs.filter(b=>b.paid).reduce((a,b)=>a+b.amount,0),unpaid=bs.filter(b=>!b.paid).reduce((a,b)=>a+b.amount,0);
   return{c,dn,cx,K,cells,earned:(M.per[c.id]||{a:0}).a,paid,unpaid}});
  ui._sheetRows=rows;ui._sheetDays=days;
@@ -713,7 +714,7 @@ VIEWS.sheet=()=>{const ym=ui.sheetMonth||(ui.sheetMonth=today().slice(0,7)),t=to
  ${cs.length?`<div class="card sheetwrap"><table class="reg"><thead><tr><th class="cn">Client</th>${days.map(d=>`<th class="${d===t?'tc':''}"><span>${'SMTWTFS'[parseD(d).getDay()]}</span>${+d.slice(8)}</th>`).join('')}<th>Planned</th><th>Done</th><th>Canc.</th><th>To do</th><th>Earned</th><th>Paid</th><th>Unpaid</th></tr></thead>
  <tbody>${rows.map(r=>`<tr><td class="cn"><button data-act="openClient" data-id="${r.c.id}"><i style="background:${esc(r.c.color||COLORS[0])}"></i>${esc(r.c.name)}</button></td>${r.cells}<td class="nm">${r.K.planned}</td><td class="nm grn">${r.dn}</td><td class="nm red">${r.cx}</td><td class="nm">${r.K.todo+r.K.unmarked}</td><td class="nm">${money(r.earned)}</td><td class="nm grn">${money(r.paid)}</td><td class="nm ${r.unpaid?'red':''}">${money(r.unpaid)}</td></tr>`).join('')}
  <tr class="tot"><td class="cn">Total</td>${days.map(()=>'<td></td>').join('')}<td class="nm">${rows.reduce((a,r)=>a+r.K.planned,0)}</td><td class="nm grn">${rows.reduce((a,r)=>a+r.dn,0)}</td><td class="nm red">${rows.reduce((a,r)=>a+r.cx,0)}</td><td class="nm">${rows.reduce((a,r)=>a+r.K.todo+r.K.unmarked,0)}</td><td class="nm">${money(rows.reduce((a,r)=>a+r.earned,0))}</td><td class="nm grn">${money(rows.reduce((a,r)=>a+r.paid,0))}</td><td class="nm red">${money(rows.reduce((a,r)=>a+r.unpaid,0))}</td></tr></tbody></table></div>
- <div class="muted sm" style="margin:10px 4px">✓ visited · ✕ cancelled · ↻ rescheduled · ? not marked · + add a session on any day · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
+ <div class="muted sm" style="margin:10px 4px">✓ visited · D demo (free) · ✕ cancelled · ↻ rescheduled · ? not marked · + add a session on any day · tap any mark to change it. “Paid / Unpaid” are the bills for this month.</div>
  <button class="btn" data-act="copySheet">Copy sheet (paste into Excel / Google Sheets)</button>`
  :emptyBig('📋','No clients yet','Add clients and their visits will fill this register.')}`};
 const JNAME={neck:'Neck',uback:'Upper back',lback:'Lower back',shoulder:'Shoulder',elbow:'Elbow',wrist:'Wrist / hand',hip:'Hip',knee:'Knee',ankle:'Ankle / foot'};
@@ -900,7 +901,7 @@ function ageOf(dob,on){if(!dob)return null;const a=parseD(dob),b=parseD(on||toda
 function bdayMatch(dob,d){if(!dob)return false;let md=dob.slice(5,10);const y=+d.slice(0,4);if(md==='02-29'&&!((y%4===0&&y%100!==0)||y%400===0))md='02-28';return d.slice(5,10)===md}
 const birthdaysOn=d=>sortClients(all('client').filter(c=>c.active!==false&&bdayMatch(c.dob,d)));
 const fmtDob=d=>parseD(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
-function clientMoney(c){return memo('cm:'+c.id,()=>{const done=all('session').filter(s=>s.clientId===c.id&&s.status==='done').length,ps=all('payment').filter(p=>p.clientId===c.id);
+function clientMoney(c){return memo('cm:'+c.id,()=>{const done=all('session').filter(s=>s.clientId===c.id&&s.status==='done'&&!isDemo(c,s.date)).length,ps=all('payment').filter(p=>p.clientId===c.id);
  const paid=ps.reduce((a,p)=>a+(Number(p.amount)||0),0),loose=ps.filter(p=>!p.billId&&!p.pkg).reduce((a,p)=>a+(Number(p.amount)||0),0);let due=0,remaining=null;
  if(c.pay==='package'){const n=Number(c.pkgSessions)||0,pr=Number(c.pkgPrice)||0,bought=ps.filter(p=>p.pkg).length;remaining=bought*n-done;due=bought*pr+(remaining<0&&n?(-remaining)*pr/n:0)-ps.filter(p=>p.pkg||!p.billId).reduce((a,p)=>a+(Number(p.amount)||0),0)}
  else due=allBills(c.id).filter(b=>!b.paid).reduce((a,b)=>a+b.amount,0)-loose;
@@ -910,7 +911,7 @@ function schedText(c){if(c.sched==='flex')return'Flexible days';if(c.sched==='al
 const av=(c,lg)=>`<span class="av ${lg?'lg':''}" style="background:${esc(c.color||COLORS[0])}" data-act="openClient" data-id="${c.id}">${esc(String(c.name||'?').trim()[0]||'?').toUpperCase()}</span>`;
 function sessActions(x){const st=stOf(x),a=`data-sid="${esc(x.id)}" data-c="${x.c.id}" data-d="${x.date}"`;
  return st==='pending'?`<div class="sact"><button class="btn sm okb" data-act="sDone" ${a}>${ic('check')}Visited</button><button class="btn sm nob" data-act="sSkip" ${a}>✕ Cancelled</button>${x.c.pay==='monthly'?`<button class="btn sm" data-act="sPost" ${a}>↻ Reschedule</button>`:''}</div>`
- :`<button class="schip st-${st}" data-act="sUndo" ${a}>${st==='done'?'✓ Visited':st==='skip'?'✕ Cancelled'+(x.s&&x.s.reason?' · '+esc(x.s.reason):''):'↻ Rescheduled to '+esc(x.s.movedTo?dueLabel(x.s.movedTo):'')}<span class="u">Undo</span></button>`}
+ :`<button class="schip st-${st}" data-act="sUndo" ${a}>${st==='done'?(isDemo(x.c,x.date)?'✓ Demo done':'✓ Visited'):st==='skip'?'✕ Cancelled'+(x.s&&x.s.reason?' · '+esc(x.s.reason):''):'↻ Rescheduled to '+esc(x.s.movedTo?dueLabel(x.s.movedTo):'')}<span class="u">Undo</span></button>`}
 const REASONS=['Client unwell','Client travelling','Client busy','I couldn’t go','Holiday / festival','Weather'];
 function openReason(data,ret){ui.checkinOpen=false;const cl=get(data.c);if(!cl)return;const a=`data-sid="${esc(data.sid)}" data-c="${data.c}" data-d="${data.d}" data-ret="${ret?1:''}"`,m=$('#modal');
  m.innerHTML=`<div class="scrim" data-act="rCancel" ${a}></div><div class="sheet morelist" style="grid-template-columns:1fr"><div class="sheet-h"><h3>Why was it cancelled?</h3><button class="icon-btn" data-act="rCancel" ${a} aria-label="Close">✕</button></div>
@@ -942,30 +943,38 @@ function weekSessions(c,mon){const out=[];for(let i=0;i<7;i++)sessionsOn(addDays
 const fmtRange=(a,b)=>a.slice(0,7)===b.slice(0,7)?parseD(a).getDate()+'–'+fmtShort(b):fmtShort(a)+' – '+fmtShort(b);
 const lastDay=ym=>ymd(new Date(+ym.slice(0,4),+ym.slice(5,7),0));
 const dlab=d=>parseD(d).toLocaleDateString('en-IN',{weekday:'short',day:'numeric'});
+const paidFrom=c=>c.paidFrom||c.start||'';
+const isDemo=(c,d)=>!!(c.paidFrom&&d<c.paidFrom);
+function scheduledRaw(c,d){return scheduledOn({...c,start:'',active:true},d)}
 function plannedIn(c,from,to){const out=[];for(let d=from;d<=to;d=addDays(d,1))if(scheduledOn(c,d))out.push(d);return out}
 // Weekly clients pay in ADVANCE: the bill made on Sunday covers the coming Mon–Sun.
 function billFor(c,sun){const id='b_'+c.id+'_'+sun,from=addDays(sun,1),to=addDays(sun,7),doc=get(id),paid=!!(doc&&doc.status==='paid'),rate=Number(c.rate)||0;
- const planned=plannedIn(c,from,to);
+ const planned=plannedIn(c,from,to).filter(d=>!isDemo(c,d));
  const prevPaid=((get('b_'+c.id+'_'+addDays(sun,-7))||{}).status==='paid');
- const cancelled=[];if(prevPaid)for(let d=addDays(sun,-6);d<=sun;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{if(stOf(x)==='skip')cancelled.push(x.date)});
+ const cancelled=[];if(prevPaid)for(let d=addDays(sun,-6);d<=sun;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{if(stOf(x)==='skip'&&!isDemo(c,x.date))cancelled.push(x.date)});
  const gross=planned.length*rate,credit=cancelled.length*rate;
  return{kind:'week',id,c,sun,from,to,planned,cancelled,rate,gross,credit,doc,paid,count:paid?doc.count:planned.length,amount:paid?doc.amount:Math.max(0,gross-credit)}}
 function bills(cid){return memo('bills:'+(cid||''),()=>{const t=today(),lastSun=parseD(t).getDay()===0?t:addDays(weekStartOf(t),-1),res=[];
  all('client').forEach(c=>{if(cid&&c.id!==cid)return;if((c.pay||'session')!=='session')return;
-  const from=c.start||ymd(new Date(c.created||Date.now()));
+  const from=paidFrom(c)||ymd(new Date(c.created||Date.now()));
   for(let s=lastSun,i=0;i<26&&addDays(s,7)>=from;s=addDays(s,-7),i++){const b=billFor(c,s);if(b.planned.length||b.paid)res.push(b)}});
  return res})}
 // Monthly clients pay in ADVANCE: on the last day of a month, the next month's fee is due.
-function mbillFor(c,ym){const id='m_'+c.id+'_'+ym,doc=get(id),paid=!!(doc&&doc.status==='paid');
- return{kind:'month',id,c,ym,from:ym+'-01',to:lastDay(ym),doc,paid,count:0,amount:paid?doc.amount:(Number(c.fee)||0)}}
+function monthShare(c,ym){const pf=paidFrom(c),a=ym+'-01',z=lastDay(ym);if(!pf||pf<=a||pf.slice(0,7)!==ym)return null;
+ const all_=[];for(let d=a;d<=z;d=addDays(d,1))if(scheduledRaw(c,d))all_.push(d);
+ if(all_.length){const part=all_.filter(d=>d>=pf).length;return{part,of:all_.length,frac:part/all_.length,by:'sessions'}}
+ const days=+z.slice(8),left=days-(+pf.slice(8))+1;return{part:left,of:days,frac:left/days,by:'days'}}
+function mbillFor(c,ym){const id='m_'+c.id+'_'+ym,doc=get(id),paid=!!(doc&&doc.status==='paid'),fee=Number(c.fee)||0,sh=monthShare(c,ym);
+ const amt=sh?Math.round(fee*sh.frac/10)*10:fee;
+ return{kind:'month',id,c,ym,from:ym+'-01',to:lastDay(ym),doc,paid,count:0,share:sh,amount:paid?doc.amount:amt}}
 function mbills(cid){return memo('mbills:'+(cid||''),()=>{const t=today(),cur=t.slice(0,7),res=[];
- all('client').forEach(c=>{if(cid&&c.id!==cid)return;if(c.pay!=='monthly')return;const st=(c.start||t).slice(0,7);
+ all('client').forEach(c=>{if(cid&&c.id!==cid)return;if(c.pay!=='monthly')return;const st=(paidFrom(c)||t).slice(0,7);
   let last=t===lastDay(cur)?shiftMonth(cur,1):cur;if(c.active===false&&c.end&&c.end.slice(0,7)<last)last=c.end.slice(0,7);
   for(let m=last,i=0;i<24&&m>=st;m=shiftMonth(m,-1),i++){const b=mbillFor(c,m);if(b.amount>0||b.paid)res.push(b)}});
  return res})}
 const allBills=cid=>[...bills(cid),...mbills(cid)].sort((a,b)=>(a.paid-b.paid)||(a.from<b.from?1:a.from>b.from?-1:ordCmp(a.c,b.c)));
 function getBill(id){const p=String(id).split('_'),k=p[0],key=p[p.length-1],c=get(p.slice(1,-1).join('_'));if(!c)return null;return k==='m'?mbillFor(c,key):billFor(c,key)}
-const billTitle=b=>b.kind==='month'?monthLabel(b.ym)+' fee':'Week '+fmtRange(b.from,b.to);
+const billTitle=b=>b.kind==='month'?monthLabel(b.ym)+' fee'+(b.share?` (part month: ${b.share.part} of ${b.share.of} ${b.share.by})`:''):'Week '+fmtRange(b.from,b.to);
 function billText(b){const p=prefs();
  if(b.kind==='month')return`Hi ${b.c.name},\nThis is a reminder for your monthly fee for ${monthLabel(b.ym)}: ${money(b.amount)}.\n\nThank you!\n— ${p.name||''}`;
  return`Hi ${b.c.name},\nHere is the advance for next week, ${fmtRange(b.from,b.to)}:\n\nSessions: ${b.planned.map(dlab).join(', ')}\n${b.planned.length} session${b.planned.length===1?'':'s'} × ${money(b.rate)} = ${money(b.gross)}${b.credit?`\nLess ${b.cancelled.length} cancelled last week (${b.cancelled.map(dlab).join(', ')}): −${money(b.credit)}`:''}\n\nTotal: ${money(b.amount)}\n\nThank you!\n— ${p.name||''}`}
@@ -1025,8 +1034,8 @@ function maybePrompt(){if(!Store.ready||$('#modal').classList.contains('open'))r
 // earnings
 const sessVal=c=>c.pay==='package'?((Number(c.pkgPrice)||0)/(Number(c.pkgSessions)||1)):c.pay==='monthly'?0:(Number(c.rate)||0);
 function earnStats(from,to,month){const per={};let n=0,amt=0;
- all('session').forEach(s=>{if(s.status!=='done'||s.date<from||s.date>to)return;const c=get(s.clientId);if(!c)return;const v=sessVal(c);n++;amt+=v;const p=per[c.id]=per[c.id]||{n:0,a:0};p.n++;p.a+=v});
- if(month)all('client').forEach(c=>{if(c.pay==='monthly'&&(c.start||'')<=to&&(c.active!==false||(c.end||'')>=from)){const p=per[c.id]=per[c.id]||{n:0,a:0};p.a+=Number(c.fee)||0;amt+=Number(c.fee)||0}});
+ all('session').forEach(s=>{if(s.status!=='done'||s.date<from||s.date>to)return;const c=get(s.clientId);if(!c||isDemo(c,s.date))return;const v=sessVal(c);n++;amt+=v;const p=per[c.id]=per[c.id]||{n:0,a:0};p.n++;p.a+=v});
+ if(month)all('client').forEach(c=>{if(c.pay==='monthly'&&paidFrom(c)<=to&&(c.active!==false||(c.end||'')>=from)){const f=mbillFor(c,from.slice(0,7)).amount;const p=per[c.id]=per[c.id]||{n:0,a:0};p.a+=f;amt+=f}});
  const rec=all('payment').filter(p=>pDate(p)>=from&&pDate(p)<=to).reduce((a,p)=>a+(Number(p.amount)||0),0);
  return{n,amt,per,rec}}
 
@@ -1049,8 +1058,8 @@ VIEWS.clients=()=>{const cur=ui.clientId&&get(ui.clientId);if(cur)return clientD
  ${(()=>{const bs=allBills().slice(0,16);return bs.length?`<div class="group"><div class="group-h">Bills · weekly (Sundays) & monthly (month end)</div><div class="bills">${bs.map(billBox).join('')}</div></div>`:''})()}`
  :emptyBig('🧑‍🤝‍🧑','No clients yet','Add each client with their days and fee. Cherub’s OS will ask you every day whether each session happened.')}`};
 function clientCard(c){const m=clientMoney(c);return`<div class="card ccard ${c.active===false?'paused':''}" data-act="openClient" data-id="${c.id}">${av(c)}<div class="grow"><div class="row-t">${esc(c.name)}${c.active===false?' <span class="muted sm">· paused</span>':''}</div><div class="row-m"><span>${schedText(c)}</span><span>${esc(payLabel(c,m))}</span></div></div><div style="text-align:right">${m.due>0?`<div class="due">${money(m.due)}</div><div class="muted sm">due</div>`:m.due<0?`<div class="settled">+${money(-m.due)}</div><div class="muted sm">advance</div>`:'<div class="settled">Settled</div>'}</div></div>`}
-function monthCalc(c,ym){const t=today(),end=lastDay(ym),r={planned:0,done:0,skip:0,moved:0,unmarked:0,todo:0,reasons:[]};
- for(let d=ym+'-01';d<=end;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{const st=stOf(x);if(st==='moved'){r.moved++;return}r.planned++;
+function monthCalc(c,ym){const t=today(),end=lastDay(ym),r={planned:0,done:0,skip:0,moved:0,unmarked:0,todo:0,demo:0,reasons:[]};
+ for(let d=ym+'-01';d<=end;d=addDays(d,1))sessionsOn(d,c.id).forEach(x=>{const st=stOf(x);if(st==='moved'){r.moved++;return}if(isDemo(c,d)){if(st==='done')r.demo++;return}r.planned++;
   if(st==='done')r.done++;else if(st==='skip'){r.skip++;r.reasons.push({d,why:(x.s&&x.s.reason)||''})}else if(d<t)r.unmarked++;else r.todo++});return r}
 // ---------- AMBLE assessments ----------
 const AMB_HIST='amble_comb_history_v4',AMB_DRAFT='amble_comb_draft_v7';
@@ -1090,7 +1099,7 @@ window.addEventListener('message',e=>{const d=e.data;if(!d||d.source!=='amble'||
 function calcHtml(c){const ym=ui.calcMonth||today().slice(0,7),k=monthCalc(c,ym);
  const box=(l,v,cls)=>`<div class="kbox ${cls||''}"><div class="kv">${v}</div><div class="kl">${l}</div></div>`;
  return`<section class="card pad calc"><div class="sec-h"><h3>Session calculator</h3><span class="grow"></span><button class="icon-btn" data-act="calcMove" data-n="-1" aria-label="Previous month">${ic('left')}</button><b class="sm">${monthLabel(ym)}</b><button class="icon-btn" data-act="calcMove" data-n="1" aria-label="Next month">${ic('right')}</button></div>
- <div class="kgrid">${box('Planned',k.planned)}${box('Done ✓',k.done,'ok')}${box('Cancelled ✕',k.skip,'bad')}${box('Still to do',k.todo)}${k.unmarked?box('Not marked ?',k.unmarked,'warn'):''}${k.moved?box('Rescheduled ↻',k.moved):''}</div>
+ <div class="kgrid">${box('Planned',k.planned)}${box('Done ✓',k.done,'ok')}${box('Cancelled ✕',k.skip,'bad')}${box('Still to do',k.todo)}${k.unmarked?box('Not marked ?',k.unmarked,'warn'):''}${k.moved?box('Rescheduled ↻',k.moved):''}${k.demo?box('Demo (free)',k.demo):''}</div>
  ${k.planned?`<div class="meter" style="margin-top:12px"><i style="width:${Math.round(k.done/k.planned*100)}%;background:var(--ok)"></i></div><div class="muted sm" style="margin-top:6px">${k.done} of ${k.planned} sessions done this month${k.todo?` · ${k.todo} still to do`:''}</div>`:'<div class="empty">No sessions planned this month.</div>'}
  ${k.reasons.length?`<div class="group-h" style="margin-top:14px">Why sessions were cancelled</div>${k.reasons.map(r=>`<div class="row-m" style="padding:4px 0"><span>✕ ${parseD(r.d).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</span><span style="color:var(--text)">${esc(r.why||'No reason given')}</span></div>`).join('')}`:''}</section>`}
 function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mDone=0,mSched=0;
@@ -1099,7 +1108,7 @@ function clientDetail(c){const m=clientMoney(c),t=today(),ym=t.slice(0,7);let mD
  const next=[];for(let i=1;i<=21&&next.length<5;i++){const d=addDays(t,i);sessionsOn(d,c.id).forEach(x=>{if(stOf(x)==='pending')next.push(x)})}
  const pays=all('payment').filter(p=>p.clientId===c.id).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(b.created||0)-(a.created||0));
  const third=c.pay==='package'?['Sessions left',m.remaining]:c.pay==='monthly'?['Monthly fee',money(c.fee)]:['Per session',money(c.rate)];
- return`<header class="top"><div style="display:flex;gap:12px;align-items:center;min-width:0"><button class="icon-btn lg" data-act="clientsBack" aria-label="Back">${ic('back')}</button>${av(c,1)}<div style="min-width:0"><div class="eyebrow">${schedText(c)}${c.active===false?' · Paused':''}${c.dob?` · 🎂 ${fmtDob(c.dob)} · Age ${ageOf(c.dob)}`:''}</div><h1 class="ell">${esc(c.name)}</h1></div></div><button class="btn" data-act="editClient" data-id="${c.id}">Edit</button></header>
+ return`<header class="top"><div style="display:flex;gap:12px;align-items:center;min-width:0"><button class="icon-btn lg" data-act="clientsBack" aria-label="Back">${ic('back')}</button>${av(c,1)}<div style="min-width:0"><div class="eyebrow">${schedText(c)}${c.active===false?' · Paused':''}${c.dob?` · 🎂 ${fmtDob(c.dob)} · Age ${ageOf(c.dob)}`:''}${c.paidFrom?` · Paid from ${fmtShort(c.paidFrom)}`:''}</div><h1 class="ell">${esc(c.name)}</h1></div></div><button class="btn" data-act="editClient" data-id="${c.id}">Edit</button></header>
  <div class="stats"><div class="card stat"><div class="l">This month</div><div class="v">${mDone}<span class="muted sm" style="font-weight:500"> / ${mSched} done</span></div></div>
  <div class="card stat"><div class="l">${m.due<0?'Advance':'Due'}</div><div class="v" style="color:${m.due>0?'var(--danger)':'var(--ok)'}">${money(Math.abs(m.due))}</div></div>
  <div class="card stat"><div class="l">Total paid</div><div class="v">${money(m.paid)}</div></div><div class="card stat"><div class="l">${third[0]}</div><div class="v">${third[1]}</div></div></div>
@@ -1123,7 +1132,7 @@ function editClient(c={}){const isNew=!c.id;
   {k:'pkgPrice',label:'Package price',type:'number',half:1,when:{k:'pay',v:'package'}},
   {k:'pkgSessions',label:'Sessions in package',type:'number',half:1,when:{k:'pay',v:'package'}}];
  if(isNew)fields.push({k:'paidNow',label:'They’ve already paid for the first package',type:'checkbox',when:{k:'pay',v:'package'},def:true});
- fields.push({k:'start',label:'Started on (monthly fees count from this month)',type:'date'},{k:'color',label:'Colour',type:'radio',colors:1,options:COLORS},{k:'notes',label:'Notes',type:'textarea',ph:'Goals, address, anything useful'});
+ fields.push({k:'start',label:'Sessions start (first demo or first session)',type:'date',half:1},{k:'paidFrom',label:'Paid from (after demos — leave empty if no demos)',type:'date',half:1},{k:'color',label:'Colour',type:'radio',colors:1,options:COLORS},{k:'notes',label:'Notes',type:'textarea',ph:'Goals, address, anything useful'});
  openForm({title:isNew?'New client':'Edit client',values:v,fields,
   validate:x=>x.sched==='days'&&!x.days.length?'Pick at least one day':x.sched==='alt'&&!x.altStart?'Pick a session day for alternate days':null,
   onSave:x=>{const id=c.id||uid();const nc={...c,...x,kind:'client',id,active:c.active!==false,created:c.created||Date.now(),order:c.order??(Math.max(-1,...all('client').map(k=>k.order??-1))+1)};['rate','fee','pkgPrice','pkgSessions'].forEach(k=>nc[k]=Number(nc[k])||0);delete nc.paidNow;put(nc);
