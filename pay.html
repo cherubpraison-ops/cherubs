@@ -3,10 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Pay via UPI</title>
+<title>Payment request</title>
+<meta property="og:title" content="Payment request">
+<meta property="og:description" content="Tap to pay with Google Pay, PhonePe, Paytm or any UPI app.">
+<meta name="description" content="Tap to pay with Google Pay, PhonePe, Paytm or any UPI app.">
 <meta name="theme-color" content="#e9dfd0">
 <meta name="robots" content="noindex">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -17,12 +20,14 @@ body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;background
 h1{font-family:Fraunces,serif;font-size:26px;margin:4px 0 2px}
 .amt{font-size:46px;font-weight:700;margin:14px 0 4px;font-variant-numeric:tabular-nums}
 .note{color:#806c58;font-size:15px;margin-bottom:18px}
-.pay{display:block;background:#687f52;color:#fbf3e7;text-decoration:none;font-weight:700;font-size:18px;padding:16px;border-radius:14px}
+.pay{display:flex;align-items:center;justify-content:center;gap:8px;background:#fffaf3;color:#3d2e22;border:1px solid #d8c8b1;text-decoration:none;font-weight:700;font-size:17px;padding:15px;border-radius:14px;margin-bottom:9px}
+.pay.gp{border-left:6px solid #4285f4}.pay.pp{border-left:6px solid #5f259f}.pay.pt{border-left:6px solid #00baf2}.pay.ot{background:#e5d8c6;font-weight:600;font-size:15px}
+.lbl{font-weight:600;color:#806c58;font-size:14px;margin:4px 0 10px}
 .apps{color:#806c58;font-size:13px;margin:8px 0 18px}
 #qr{display:inline-block;background:#fff;padding:12px;border-radius:14px;margin:6px 0}
 .or{color:#806c58;font-size:13px;margin:4px 0 8px}
-.upi span{word-break:break-all;text-align:left}
-.upi{display:flex;gap:8px;align-items:center;justify-content:center;background:#e5d8c6;border-radius:12px;padding:10px 12px;margin-top:12px;font-weight:600;word-break:break-all}
+.upi span{overflow-wrap:anywhere;text-align:left;font-size:15px}
+.upi{display:flex;gap:8px;align-items:center;justify-content:center;background:#e5d8c6;border-radius:12px;padding:10px 12px;margin-top:12px;font-weight:600}
 .upi button{white-space:nowrap;flex-shrink:0;border:0;background:#9a6238;color:#fbf3e7;font-weight:600;border-radius:9px;padding:7px 12px;cursor:pointer;font:inherit;font-size:13px}
 .err{color:#a6523b}
 .small{font-size:12px;color:#806c58;margin-top:16px}
@@ -38,10 +43,15 @@ if(!/^[\w.\-]{2,}@[\w]{2,}$/.test(pa)){c.innerHTML='<h1>Payment link</h1><p clas
 else{
  const amt=Number(am)>0?Number(am).toFixed(2):'';
  const upi='upi://pay?'+['pa='+encodeURIComponent(pa),'pn='+encodeURIComponent(pn||pa),amt?'am='+amt:'','cu=INR',tn?'tn='+encodeURIComponent(tn.slice(0,60)):''].filter(Boolean).join('&');
+ const P=upi.slice('upi://pay?'.length),ua=navigator.userAgent,isA=/Android/i.test(ua),isI=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const intent=pkg=>'intent://pay?'+P+'#Intent;scheme=upi;package='+pkg+';end';
+ const apps=isA?[['gp','Google Pay',intent('com.google.android.apps.nbu.paisa.user')],['pp','PhonePe',intent('com.phonepe.app')],['pt','Paytm',intent('net.one97.paytm')],['ot','Other UPI app',upi]]
+  :isI?[['gp','Google Pay','gpay://upi/pay?'+P],['pp','PhonePe','phonepe://pay?'+P],['pt','Paytm','paytmmp://pay?'+P],['ot','Other UPI app',upi]]:[];
+ const btns=apps.map(([k,l,h])=>`<a class="pay ${k}" href="${esc(h)}">${l}</a>`).join('')||'<div class="apps">Open this link on your phone to pay, or scan the code below with any UPI app.</div>';
  const rupees=amt?'₹'+Number(amt).toLocaleString('en-IN',{maximumFractionDigits:2}):'';
  c.innerHTML=`<div class="to">Pay to</div><h1>${esc(pn||pa)}</h1>${rupees?`<div class="amt">${rupees}</div>`:''}${tn?`<div class="note">${esc(tn)}</div>`:'<div style="height:12px"></div>'}
- <a class="pay" href="${esc(upi)}">Pay ${rupees||''} with UPI</a>
- <div class="apps">Opens Google Pay, PhonePe, Paytm or any UPI app</div>
+ <div class="lbl">Pay ${rupees||''} with</div>${btns}
+ <div class="apps">If nothing opens, that app isn’t on this phone — try another one, scan the code, or copy the UPI ID below.</div>
  <div class="or">On a computer? Scan with your phone’s UPI app:</div><div id="qr"></div>
  <div class="upi"><span>${esc(pa)}</span><button id="cp">Copy UPI ID</button></div>
  <div class="small">The payment goes directly to ${esc(pn||pa)}’s bank account through UPI. Please check the name in your UPI app before paying.</div>`;

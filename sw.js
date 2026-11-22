@@ -27,7 +27,7 @@ self.addEventListener('notificationclick', e => {
 // Notifications sent with a "notification" payload are shown automatically.
 firebase.messaging();
 
-const CACHE = 'cherub-v16';
+const CACHE = 'cherub-v17';
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const SHELL = ['./', 'index.html', 'assessment.html', 'pay.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
   FB + 'firebase-app-compat.js', FB + 'firebase-auth-compat.js', FB + 'firebase-firestore-compat.js', FB + 'firebase-messaging-compat.js'];
@@ -44,6 +44,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Never cache the database or sign-in traffic.
   if (/firestore\.googleapis|identitytoolkit|securetoken|fcmregistrations|firebaseinstallations|googleapis\.com\/v1/.test(url.href)) return;
+  if (url.pathname.endsWith('/pay.html')) { e.respondWith(fetch(req).catch(() => caches.match('pay.html'))); return; }
   const appPage = req.mode === 'navigate' || url.pathname.endsWith('/index.html');
   if (appPage) {
     // Network first so updates arrive; fall back to the saved copy when offline.
