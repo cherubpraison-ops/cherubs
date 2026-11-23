@@ -27,7 +27,7 @@ self.addEventListener('notificationclick', e => {
 // Notifications sent with a "notification" payload are shown automatically.
 firebase.messaging();
 
-const CACHE = 'cherub-v22';
+const CACHE = 'cherub-v23';
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const SHELL = ['./', 'index.html', 'assessment.html', 'pay.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
   FB + 'firebase-app-compat.js', FB + 'firebase-auth-compat.js', FB + 'firebase-firestore-compat.js', FB + 'firebase-messaging-compat.js'];

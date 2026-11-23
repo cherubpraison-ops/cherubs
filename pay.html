@@ -54,6 +54,19 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:34px;line-he
 .foot{display:flex;align-items:flex-start;gap:10px;justify-content:center;margin-top:22px;color:rgba(239,226,205,.72);font-size:12px;line-height:1.55;text-align:center;padding:0 10px}
 .foot svg{width:14px;height:14px;flex-shrink:0;margin-top:2px;color:var(--gold2)}
 .err{text-align:center;color:#9a4a35}
+.det{margin:24px 0 0;border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
+.det .row{display:flex;justify-content:space-between;gap:14px;padding:12px 16px;border-top:1px solid #f0e8db;font-size:14px}
+.det .row:first-child{border-top:0}
+.det .k{color:var(--muted);font-weight:500}
+.det .v{font-weight:600;text-align:right;overflow-wrap:anywhere}
+.det .row.tot{background:#f8f2e8}.det .row.tot .v{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600}
+.app .t{display:flex;flex-direction:column;flex:1;line-height:1.25}
+.app .t small{font-weight:500;font-size:12px;color:var(--muted)}
+.steps{display:flex;justify-content:space-between;gap:6px;margin:22px 0 0;counter-reset:s}
+.steps div{flex:1;text-align:center;font-size:11.5px;color:var(--muted);line-height:1.4}
+.steps div::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:26px;height:26px;margin:0 auto 6px;border-radius:50%;border:1px solid var(--gold2);color:var(--gold);font-weight:700;font-size:12px;background:#fff}
+.badge{display:inline-flex;align-items:center;gap:6px;margin:12px auto 0;padding:5px 12px;border-radius:30px;background:#f3ece1;border:1px solid var(--line);font-size:11.5px;font-weight:600;color:var(--muted)}
+.center{text-align:center}
 @media(max-width:380px){.card{padding:32px 22px 24px}.amt{font-size:54px}h1{font-size:30px}}
 </style>
 </head>
@@ -61,7 +74,7 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:34px;line-he
 <div class="wrap"><div class="card" id="c"></div>
 <div class="foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="ft">Paid directly through UPI to the recipient’s bank account. No card details are ever requested.</span></div></div>
 <script>
-const q=new URLSearchParams(location.search),pa=(q.get('pa')||'').trim(),pn=(q.get('pn')||'').trim(),am=(q.get('am')||'').trim(),tn=(q.get('tn')||'').trim();
+const q=new URLSearchParams(location.search),pa=(q.get('pa')||'').trim(),pn=(q.get('pn')||'').trim(),am=(q.get('am')||'').trim(),tn=(q.get('tn')||'').trim(),dt=(q.get('d')||'').trim();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const c=document.getElementById('c');
 if(!/^[\w.\-]{2,}@[\w]{2,}$/.test(pa)){c.innerHTML='<div class="eyebrow">Payment request</div><h1>Link incomplete</h1><p class="err">Please ask for a new payment link.</p>'}
@@ -80,9 +93,17 @@ else{
  <h1>${esc(name)}</h1>
  ${amt?`<div class="amt"><span class="r">₹</span>${whole}${paise&&paise!=='00'?`<span class="p">.${paise}</span>`:''}</div>`:'<div style="height:18px"></div>'}
  ${tn?`<div class="for">${esc(tn)}</div>`:''}
+ <div class="center"><span class="badge">● Secure UPI payment · India</span></div>
+ <div class="det">
+  <div class="row"><span class="k">Pay to</span><span class="v">${esc(name)}</span></div>
+  ${tn?`<div class="row"><span class="k">For</span><span class="v">${esc(tn)}</span></div>`:''}
+  ${/^\d{4}-\d{2}-\d{2}$/.test(dt)?`<div class="row"><span class="k">Requested on</span><span class="v">${new Date(dt+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</span></div>`:''}
+  ${amt?`<div class="row tot"><span class="k">Amount</span><span class="v">₹${Number(amt).toLocaleString('en-IN',{minimumFractionDigits:paise&&paise!=='00'?2:0})}</span></div>`:''}
+ </div>
+ <div class="steps m"><div>Choose your UPI app</div><div>Check the name &amp; amount</div><div>Enter your UPI PIN</div></div>
  <div class="rule">Pay securely with</div>
- <div class="apps">${apps.map(([b,col,l,h])=>`<a class="app" href="${esc(h)}"><span class="b" style="background:${col}">${b}</span><span class="n">${l}</span><span class="c">›</span></a>`).join('')}
-  <a class="app other" href="${esc(upi)}"><span class="b" style="background:#b9a68c">UPI</span><span class="n">Another UPI app</span><span class="c">›</span></a></div>
+ <div class="apps">${apps.map(([b,col,l,h])=>`<a class="app" href="${esc(h)}"><span class="b" style="background:${col}">${b}</span><span class="t"><span style="color:${col}">${l}</span><small>${whole?'₹'+whole+' filled in for you':'Opens the app'}</small></span><span class="c">›</span></a>`).join('')}
+  <a class="app other" href="${esc(upi)}"><span class="b" style="background:#b9a68c">UPI</span><span class="t">Another UPI app<small>BHIM, bank apps and others</small></span><span class="c">›</span></a></div>
  <div class="hint m">If an app doesn’t open, it isn’t installed on this phone — please choose another.</div>
  <div class="qrbox"><div id="qr"></div><div class="qrcap">Scan with any UPI app on your phone</div></div>
  <div class="upi"><div><div class="l">UPI ID</div><div class="v">${esc(pa)}</div></div><button id="cp">Copy</button></div>`;

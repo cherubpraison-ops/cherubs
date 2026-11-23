@@ -1282,7 +1282,7 @@ async function testNotification(){
  try{await Store.db.collection('users').doc(Store.uid).collection('meta').doc('test').set({at:Date.now()});toast('Test sent ✓ — a second one comes from the server within ~15 minutes')}catch(e){toast('Test shown on this device')}}
 // ---------- UPI payment links ----------
 function payUrl(amount,note){const p=prefs(),base=location.origin+location.pathname.replace(/[^/]*$/,'');
- return base+'pay.html?'+['pa='+encodeURIComponent((p.upi||'').trim()),'pn='+encodeURIComponent((p.upiName||p.name||'').trim()),Number(amount)>0?'am='+Number(amount):'',note?'tn='+encodeURIComponent(note):''].filter(Boolean).join('&')}
+ return base+'pay.html?'+['pa='+encodeURIComponent((p.upi||'').trim()),'pn='+encodeURIComponent((p.upiName||p.name||'').trim()),Number(amount)>0?'am='+Number(amount):'',note?'tn='+encodeURIComponent(note):'','d='+today()].filter(Boolean).join('&')}
 function openPayLink(o){ui.checkinOpen=false;const p=prefs();
  if(!/^[\w.\-]{2,}@[\w]{2,}$/.test((p.upi||'').trim())){openForm({title:'Your UPI ID',fields:[{k:'upi',label:'UPI ID (from GPay → Profile)',ph:'yourname@okaxis',req:1},{k:'upiName',label:'Name shown to clients',def:p.name||''}],values:p,
   validate:v=>/^[\w.\-]{2,}@[\w]{2,}$/.test(v.upi)?null:'That doesn’t look like a UPI ID (it has an @)',onSave:v=>{put({...prefs(),upi:v.upi,upiName:v.upiName});setTimeout(()=>openPayLink(o),50)}});return}
