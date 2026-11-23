@@ -515,7 +515,7 @@ function subscribe(){
   for(const id of Store.pending){const cur=Store.items.get(id);if(cur)m.set(id,cur);else m.delete(id)}
   Store.items=m;
   if(!snap.metadata.fromCache){clearTimeout(t);Store.note=''}
-  if(first){first=false;Store.ready=true;render();runPendingDo()}else safeRender();
+  if(first){first=false;Store.ready=true;render();runPendingDo();setTimeout(rescueAmbleDraft,1500)}else safeRender();
  },err=>{clearTimeout(t);Store.ready=true;Store.note='Sync stopped. Close and reopen Cherub to reconnect.';render()});
 }
 const isTyping=()=>{const a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)};
@@ -1106,26 +1106,35 @@ function assessHtml(c){const L=assessOf(c.id),last=L[L.length-1],prev=L[L.length
  ${(last.findings||[]).length?`<div class="group-h" style="margin-top:12px">Latest findings</div><ul class="finds">${last.findings.slice(0,6).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>`:''}
  <div class="group-h" style="margin-top:12px">History</div>${L.slice().reverse().map(a=>`<div class="tx" data-act="asOpen" data-id="${esc(a.id)}"><span class="em">📋</span><div class="grow"><div class="row-t">${esc(a.visit||'Assessment')} · ${fmtLongDate(a.date)}</div><div class="muted sm">AMBLE ${num(sc(a).amble)} · Mobility ${num(sc(a).function_psfs)} · Strength ${num(sc(a).strength)} · Pain ${num(sc(a).pain)} · Balance ${num(sc(a).balanceCoordination)}</div></div><button class="icon-btn" data-act="asDel" data-id="${esc(a.id)}" title="Delete" aria-label="Delete">${ic('trash')}</button></div>`).join('')}`
  :`<div class="empty">No assessments yet. Tap “New assessment” to do ${esc(c.name)}’s first one — name, date of birth and age are filled in for you.</div>`}</section>`}
+function rescueAmbleDraft(){try{const raw=localStorage.getItem(AMB_DRAFT);if(!raw)return 0;const a=JSON.parse(raw)||{};if(!hasContent(a)){return 0}
+ const nm=String(a.name||'').trim().toLowerCase(),c=all('client').find(k=>String(k.name).trim().toLowerCase()===nm)||all('client').find(k=>a.cid&&k.cno===a.cid);if(!c)return 0;
+ const date=a.date||today(),visit=a.visit||'Assessment',id='as_'+c.id+'_'+date+'_'+(visit==='Initial'?'i':'r');if(get(id))return 0;
+ put({kind:'assessment',id,clientId:c.id,date,visit,score:{},findings:[],record:a,savedAt:new Date().toISOString(),rescued:true,created:Date.now()},{silent:true});toast('Recovered an unsaved assessment for '+c.name);return 1}catch(e){return 0}}
 function seedAmbleHistory(c,key){try{const h=JSON.parse(localStorage.getItem(AMB_HIST)||'{}');
  h[key]=assessOf(c.id).map(a=>{const sc=a.score||{};return{date:a.date,visit:a.visit||'',total:sc.amble,mob:sc.function_psfs,str:sc.strength,pain:sc.pain,bal:sc.balanceCoordination,raw:sc.raw,answers:a.record||{}}});
  localStorage.setItem(AMB_HIST,JSON.stringify(h));localStorage.removeItem(AMB_DRAFT)}catch(e){}}
 function openAssessment(c,existing){
  const L=assessOf(c.id),key=(c.cno||'').trim()||c.name;
  const answers=existing?JSON.parse(JSON.stringify(existing.record||{})):{name:c.name,cid:c.cno||'',dob:c.dob||'',age:c.dob?String(ageOf(c.dob)):'',date:today(),visit:L.length?'Re-assessment':'Initial',jd:{}};
- seedAmbleHistory(c,key);
- ui.amb={cid:c.id,editing:existing?existing.id:null};
+ rescueAmbleDraft();seedAmbleHistory(c,key);
+ ui.amb={cid:c.id,editing:existing?existing.id:null,openedAt:existing&&existing.rescued?0:Date.now()};
  let ov=$('#ambOv');if(ov)ov.remove();
  ov=document.createElement('div');ov.id='ambOv';ov.className='amb-ov';
- ov.innerHTML=`<div class="amb-bar"><div class="grow"><b>${esc(c.name)}</b><div class="muted sm">${existing?'Viewing '+esc(existing.visit||'assessment')+' · '+fmtLongDate(existing.date):'New '+(L.length?'re-assessment':'assessment')} · tap <b>Save</b> inside the form to keep it</div></div><button class="btn" data-act="asClose">Done</button></div><iframe id="ambFrame" title="Assessment" src="assessment.html"></iframe>`;
+ ov.innerHTML=`<div class="amb-bar"><div class="grow"><b>${esc(c.name)}</b><div class="muted sm">${existing?'Viewing '+esc(existing.visit||'assessment')+' · '+fmtLongDate(existing.date):'New '+(L.length?'re-assessment':'assessment')} · <span id="ambStatus">saves automatically as you go</span></div></div><button class="btn" data-act="asClose">Done</button></div><iframe id="ambFrame" title="Assessment" src="assessment.html"></iframe>`;
  document.body.appendChild(ov);
  const fr=$('#ambFrame');fr.addEventListener('load',()=>{try{fr.contentWindow.postMessage({source:'amble-host',type:'load',record:{answers}},'*')}catch(e){}},{once:true})}
-window.addEventListener('message',e=>{const d=e.data;if(!d||d.source!=='amble'||d.type!=='saved'||!ui.amb)return;const fr=$('#ambFrame');if(!fr||e.source!==fr.contentWindow)return;
- const c=get(ui.amb.cid);if(!c)return;const rec=d.record||{},a=rec.answers||{},date=a.date||today(),visit=a.visit||'Assessment';
- const id='as_'+c.id+'_'+date+'_'+(visit==='Initial'?'i':'r');
+const PREFILL=new Set(['name','cid','dob','age','date','visit','jd','assessor']);
+const hasContent=a=>Object.entries(a||{}).some(([k,v])=>!PREFILL.has(k)&&v!=null&&v!==''&&!(Array.isArray(v)&&!v.length)&&!(typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length))||Object.values(a&&a.jd||{}).some(e=>e&&(+e.pain>0||e.note||Object.keys(e.rom||{}).length||Object.keys(e.mmt||{}).length));
+function storeAssessment(rec,final){const c=ui.amb&&get(ui.amb.cid);if(!c)return;const a=rec.answers||{};if(!final&&!hasContent(a))return;
+ const date=a.date||today(),visit=a.visit||'Assessment',id='as_'+c.id+'_'+date+'_'+(visit==='Initial'?'i':'r');
  if(ui.amb.editing&&ui.amb.editing!==id)remove(ui.amb.editing,true);ui.amb.editing=id;
- put({kind:'assessment',id,clientId:c.id,date,visit,score:rec.score||{},findings:rec.findings||[],record:a,savedAt:rec.savedAt||new Date().toISOString(),created:(get(id)||{}).created||Date.now()});
+ put({kind:'assessment',id,clientId:c.id,date,visit,score:rec.score||{},findings:rec.findings||[],record:a,savedAt:rec.savedAt||new Date().toISOString(),created:(get(id)||{}).created||Date.now()},{silent:true,delay:final?0:800});
  if(a.cid&&a.cid!==c.cno){c.cno=a.cid;put(c,{silent:true})}
- toast('Assessment saved to '+c.name+' ✓')});
+ ui.amb.pending=null;const st=$('#ambStatus');if(st)st.textContent='✓ Saved automatically · '+new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'})}
+window.addEventListener('message',e=>{const d=e.data;if(!d||d.source!=='amble'||!ui.amb)return;const fr=$('#ambFrame');if(!fr||e.source!==fr.contentWindow)return;
+ if(d.type==='change'){if(Date.now()-(ui.amb.openedAt||0)<1500)return;ui.amb.pending=d.record;storeAssessment(d.record||{},false);return}
+ if(d.type!=='saved')return;storeAssessment(d.record||{},true);
+ toast('Assessment saved to '+(get(ui.amb.cid)||{}).name+' ✓')});
 function calcHtml(c){const ym=ui.calcMonth||today().slice(0,7),k=monthCalc(c,ym);
  const box=(l,v,cls)=>`<div class="kbox ${cls||''}"><div class="kv">${v}</div><div class="kl">${l}</div></div>`;
  return`<section class="card pad calc"><div class="sec-h"><h3>Session calculator</h3><span class="grow"></span><button class="icon-btn" data-act="calcMove" data-n="-1" aria-label="Previous month">${ic('left')}</button><b class="sm">${monthLabel(ym)}</b><button class="icon-btn" data-act="calcMove" data-n="1" aria-label="Next month">${ic('right')}</button></div>
@@ -1409,7 +1418,7 @@ const ACT={...CLIENT_ACT,...VOICE_ACT,
  asNew(el){const c=get(el.dataset.id);if(c)openAssessment(c,null)},
  asOpen(el,e){if(e&&e.target.closest('[data-act=asDel]'))return;const a=get(el.dataset.id);const c=a&&get(a.clientId);if(c)openAssessment(c,a)},
  asDel(el,e){if(e)e.stopPropagation();if(!el.dataset.armed){el.dataset.armed=1;toast('Tap the bin again to delete this assessment');setTimeout(()=>{delete el.dataset.armed},3000);return}remove(el.dataset.id);toast('Assessment deleted')},
- asClose(){const ov=$('#ambOv');if(ov)ov.remove();ui.amb=null;try{localStorage.removeItem(AMB_DRAFT)}catch(e){}render()},
+ asClose(){if(ui.amb&&ui.amb.pending)storeAssessment(ui.amb.pending,false);const ov=$('#ambOv');if(ov)ov.remove();ui.amb=null;try{localStorage.removeItem(AMB_DRAFT)}catch(e){}render()},
  closeModal,search:openSearch,more:openMore,
  qc(el){quick(el.dataset.k,$('#qcIn').value.trim())},
  toggleTask(el){const t=get(el.dataset.id);if(!t)return;t.done=!t.done;t.doneAt=t.done?Date.now():null;put(t);if(t.done)toast('Done ✓')},
@@ -1495,7 +1504,9 @@ setInterval(()=>{if(prefs().theme==='timed'){const b=document.documentElement.da
 setInterval(maybePrompt,30000);
 
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
-window.addEventListener('pagehide',()=>{if(Store.mode==='local'){clearTimeout(Store.timers._ls);saveLocal()}});
+function flushWrites(){if(Store.mode==='local'){clearTimeout(Store.timers._ls);saveLocal();return}if(Store.mode==='cloud')[...Store.pending].forEach(id=>{if(Store.timers[id])persist(id,0)})}
+window.addEventListener('pagehide',()=>{if(ui.amb&&ui.amb.pending)storeAssessment(ui.amb.pending,false);flushWrites()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(ui.amb&&ui.amb.pending)storeAssessment(ui.amb.pending,false);flushWrites()}});
 async function liveTouchIcon(){try{await document.fonts.load('200px "Pinyon Script"');if(!document.fonts.check('200px "Pinyon Script"'))return;const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');const g=x.createRadialGradient(90,67,10,90,90,134);g.addColorStop(0,'#5b4232');g.addColorStop(1,'#241a13');x.fillStyle=g;x.fillRect(0,0,180,180);x.strokeStyle='rgba(205,168,112,.45)';x.lineWidth=1.2;x.beginPath();if(x.roundRect)x.roundRect(11,11,158,158,26);else x.rect(11,11,158,158);x.stroke();const tg=x.createLinearGradient(0,63,0,113);tg.addColorStop(0,'#efd6a6');tg.addColorStop(1,'#bd8c55');x.fillStyle=tg;x.textAlign='center';x.font='40px "Pinyon Script", cursive';x.fillText('Cherub’s',90,103);x.fillStyle='rgba(225,195,145,.7)';x.font='600 8px Inter, sans-serif';x.fillText('O   S',90,127);const l=$('#touchIcon');if(l)l.href=c.toDataURL('image/png')}catch(e){}}
 readHash();init();liveTouchIcon();
 </script>
