@@ -5,58 +5,90 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Payment request</title>
 <meta property="og:title" content="Payment request">
-<meta property="og:description" content="Tap to pay with Google Pay, PhonePe, Paytm or any UPI app.">
-<meta name="description" content="Tap to pay with Google Pay, PhonePe, Paytm or any UPI app.">
-<meta name="theme-color" content="#e9dfd0">
+<meta property="og:description" content="Pay securely with Google Pay, PhonePe, Paytm or any UPI app.">
+<meta name="description" content="Pay securely with Google Pay, PhonePe, Paytm or any UPI app.">
+<meta name="theme-color" content="#1c1511">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;background:radial-gradient(900px 600px at 20% -10%,#efe6d8,transparent 65%),#e9dfd0;color:#3d2e22;display:grid;place-items:center;padding:20px}
-.card{width:min(420px,100%);background:#f1e8db;border:1px solid #d8c8b1;border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 10px 30px rgba(60,40,20,.12)}
-.to{color:#806c58;font-size:14px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-h1{font-family:Fraunces,serif;font-size:26px;margin:4px 0 2px}
-.amt{font-size:46px;font-weight:700;margin:14px 0 4px;font-variant-numeric:tabular-nums}
-.note{color:#806c58;font-size:15px;margin-bottom:18px}
-.pay{display:flex;align-items:center;justify-content:center;gap:8px;background:#fffaf3;color:#3d2e22;border:1px solid #d8c8b1;text-decoration:none;font-weight:700;font-size:17px;padding:15px;border-radius:14px;margin-bottom:9px}
-.pay.gp{border-left:6px solid #4285f4}.pay.pp{border-left:6px solid #5f259f}.pay.pt{border-left:6px solid #00baf2}.pay.ot{background:#e5d8c6;font-weight:600;font-size:15px}
-.lbl{font-weight:600;color:#806c58;font-size:14px;margin:4px 0 10px}
-.apps{color:#806c58;font-size:13px;margin:8px 0 18px}
-#qr{display:inline-block;background:#fff;padding:12px;border-radius:14px;margin:6px 0}
-.or{color:#806c58;font-size:13px;margin:4px 0 8px}
-.upi span{overflow-wrap:anywhere;text-align:left;font-size:15px}
-.upi{display:flex;gap:8px;align-items:center;justify-content:center;background:#e5d8c6;border-radius:12px;padding:10px 12px;margin-top:12px;font-weight:600}
-.upi button{white-space:nowrap;flex-shrink:0;border:0;background:#9a6238;color:#fbf3e7;font-weight:600;border-radius:9px;padding:7px 12px;cursor:pointer;font:inherit;font-size:13px}
-.err{color:#a6523b}
-.small{font-size:12px;color:#806c58;margin-top:16px}
+:root{--ink:#2a211b;--muted:#8a7a69;--line:#e7dccb;--ivory:#fbf7f0;--gold:#b08a52;--gold2:#d6b47e;--esp:#1c1511}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{min-height:100vh;font-family:Manrope,system-ui,-apple-system,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;
+ background:radial-gradient(1000px 700px at 50% -10%,#3a2b21 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#2a1f18 0%,transparent 60%),var(--esp);
+ display:flex;align-items:center;justify-content:center;padding:calc(28px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))}
+.wrap{width:min(440px,100%)}
+.card{background:var(--ivory);border-radius:28px;padding:38px 30px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 1px rgba(214,180,126,.35);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:10px;border:1px solid rgba(176,138,82,.28);border-radius:20px;pointer-events:none}
+.mono{width:58px;height:58px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:var(--esp);color:var(--gold2);font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(214,180,126,.5)}
+.eyebrow{text-align:center;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:700}
+h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:34px;line-height:1.1;text-align:center;margin:8px 0 0;letter-spacing:.01em}
+.amt{text-align:center;margin:26px 0 6px;font-family:'Cormorant Garamond',serif;font-weight:500;font-size:64px;line-height:1;letter-spacing:-.01em;font-variant-numeric:lining-nums}
+.amt .r{font-size:.55em;vertical-align:.42em;margin-right:4px;color:var(--gold)}
+.amt .p{font-size:.45em;color:var(--muted)}
+.for{text-align:center;color:var(--muted);font-style:italic;font-family:'Cormorant Garamond',serif;font-size:19px}
+.rule{display:flex;align-items:center;gap:12px;margin:28px 0 18px;color:var(--gold);font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+.rule::before,.rule::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+.apps{display:flex;flex-direction:column;gap:10px}
+.app{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;font-weight:600;font-size:16px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.app:active{transform:scale(.985)}
+.app:hover{border-color:var(--gold2);box-shadow:0 6px 18px rgba(90,60,30,.10)}
+.app .b{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;letter-spacing:.02em}
+.app .n{flex:1}
+.app .c{color:var(--gold);font-size:22px;font-weight:400;line-height:1}
+.app.other{background:transparent;border-style:dashed;font-weight:500;color:var(--muted)}
+.hint{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.55;margin:14px 6px 0}
+.qrbox{display:none;text-align:center;margin-top:6px}
+#qr{display:inline-block;padding:14px;background:#fff;border-radius:16px;border:1px solid var(--line)}
+#qr img,#qr canvas{display:block}
+.qrcap{color:var(--muted);font-size:13px;margin-top:10px}
+.desk .qrbox{display:block}.desk .apps,.desk .hint.m{display:none}
+.upi{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px;padding:12px 14px;border-radius:14px;background:#f3ece1;border:1px solid var(--line)}
+.upi .l{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.upi .v{font-weight:600;font-size:14.5px;overflow-wrap:anywhere;margin-top:2px}
+.upi button{flex-shrink:0;border:0;border-radius:10px;padding:9px 14px;font:600 13px Manrope,sans-serif;background:var(--esp);color:var(--gold2);cursor:pointer;white-space:nowrap}
+.foot{display:flex;align-items:flex-start;gap:10px;justify-content:center;margin-top:22px;color:rgba(239,226,205,.72);font-size:12px;line-height:1.55;text-align:center;padding:0 10px}
+.foot svg{width:14px;height:14px;flex-shrink:0;margin-top:2px;color:var(--gold2)}
+.err{text-align:center;color:#9a4a35}
+@media(max-width:380px){.card{padding:32px 22px 24px}.amt{font-size:54px}h1{font-size:30px}}
 </style>
 </head>
 <body>
-<div class="card" id="c"></div>
+<div class="wrap"><div class="card" id="c"></div>
+<div class="foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="ft">Paid directly through UPI to the recipient’s bank account. No card details are ever requested.</span></div></div>
 <script>
 const q=new URLSearchParams(location.search),pa=(q.get('pa')||'').trim(),pn=(q.get('pn')||'').trim(),am=(q.get('am')||'').trim(),tn=(q.get('tn')||'').trim();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const c=document.getElementById('c');
-if(!/^[\w.\-]{2,}@[\w]{2,}$/.test(pa)){c.innerHTML='<h1>Payment link</h1><p class="err">This payment link is incomplete. Please ask for a new one.</p>'}
+if(!/^[\w.\-]{2,}@[\w]{2,}$/.test(pa)){c.innerHTML='<div class="eyebrow">Payment request</div><h1>Link incomplete</h1><p class="err">Please ask for a new payment link.</p>'}
 else{
  const amt=Number(am)>0?Number(am).toFixed(2):'';
  const upi='upi://pay?'+['pa='+encodeURIComponent(pa),'pn='+encodeURIComponent(pn||pa),amt?'am='+amt:'','cu=INR',tn?'tn='+encodeURIComponent(tn.slice(0,60)):''].filter(Boolean).join('&');
  const P=upi.slice('upi://pay?'.length),ua=navigator.userAgent,isA=/Android/i.test(ua),isI=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const intent=pkg=>'intent://pay?'+P+'#Intent;scheme=upi;package='+pkg+';end';
- const apps=isA?[['gp','Google Pay',intent('com.google.android.apps.nbu.paisa.user')],['pp','PhonePe',intent('com.phonepe.app')],['pt','Paytm',intent('net.one97.paytm')],['ot','Other UPI app',upi]]
-  :isI?[['gp','Google Pay','gpay://upi/pay?'+P],['pp','PhonePe','phonepe://pay?'+P],['pt','Paytm','paytmmp://pay?'+P],['ot','Other UPI app',upi]]:[];
- const btns=apps.map(([k,l,h])=>`<a class="pay ${k}" href="${esc(h)}">${l}</a>`).join('')||'<div class="apps">Open this link on your phone to pay, or scan the code below with any UPI app.</div>';
- const rupees=amt?'₹'+Number(amt).toLocaleString('en-IN',{maximumFractionDigits:2}):'';
- c.innerHTML=`<div class="to">Pay to</div><h1>${esc(pn||pa)}</h1>${rupees?`<div class="amt">${rupees}</div>`:''}${tn?`<div class="note">${esc(tn)}</div>`:'<div style="height:12px"></div>'}
- <div class="lbl">Pay ${rupees||''} with</div>${btns}
- <div class="apps">If nothing opens, that app isn’t on this phone — try another one, scan the code, or copy the UPI ID below.</div>
- <div class="or">On a computer? Scan with your phone’s UPI app:</div><div id="qr"></div>
- <div class="upi"><span>${esc(pa)}</span><button id="cp">Copy UPI ID</button></div>
- <div class="small">The payment goes directly to ${esc(pn||pa)}’s bank account through UPI. Please check the name in your UPI app before paying.</div>`;
- try{new QRCode(document.getElementById('qr'),{text:upi,width:180,height:180,correctLevel:QRCode.CorrectLevel.M})}catch(e){document.getElementById('qr').remove();document.querySelector('.or').remove()}
- document.getElementById('cp').onclick=()=>{navigator.clipboard.writeText(pa).then(()=>{document.getElementById('cp').textContent='Copied ✓'}).catch(()=>{})};
+ const apps=isA?[['G','#4285f4','Google Pay',intent('com.google.android.apps.nbu.paisa.user')],['Pe','#5f259f','PhonePe',intent('com.phonepe.app')],['P','#00b9f1','Paytm',intent('net.one97.paytm')]]
+  :isI?[['G','#4285f4','Google Pay','gpay://upi/pay?'+P],['Pe','#5f259f','PhonePe','phonepe://pay?'+P],['P','#00b9f1','Paytm','paytmmp://pay?'+P]]:[];
+ if(!isA&&!isI)document.body.classList.add('desk');
+ const whole=amt?Math.floor(Number(amt)).toLocaleString('en-IN'):'',paise=amt?amt.split('.')[1]:'';
+ const name=pn||pa,init=(name.trim()[0]||'₹').toUpperCase();
+ c.innerHTML=`<div class="mono">${esc(init)}</div>
+ <div class="eyebrow">Payment request</div>
+ <h1>${esc(name)}</h1>
+ ${amt?`<div class="amt"><span class="r">₹</span>${whole}${paise&&paise!=='00'?`<span class="p">.${paise}</span>`:''}</div>`:'<div style="height:18px"></div>'}
+ ${tn?`<div class="for">${esc(tn)}</div>`:''}
+ <div class="rule">Pay securely with</div>
+ <div class="apps">${apps.map(([b,col,l,h])=>`<a class="app" href="${esc(h)}"><span class="b" style="background:${col}">${b}</span><span class="n">${l}</span><span class="c">›</span></a>`).join('')}
+  <a class="app other" href="${esc(upi)}"><span class="b" style="background:#b9a68c">UPI</span><span class="n">Another UPI app</span><span class="c">›</span></a></div>
+ <div class="hint m">If an app doesn’t open, it isn’t installed on this phone — please choose another.</div>
+ <div class="qrbox"><div id="qr"></div><div class="qrcap">Scan with any UPI app on your phone</div></div>
+ <div class="upi"><div><div class="l">UPI ID</div><div class="v">${esc(pa)}</div></div><button id="cp">Copy</button></div>`;
+ document.getElementById('ft').textContent=`Paid directly through UPI to ${name}’s bank account. No card details are ever requested.`;
+ try{new QRCode(document.getElementById('qr'),{text:upi,width:200,height:200,colorDark:'#1c1511',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}catch(e){const b=document.querySelector('.qrbox');if(b)b.remove()}
+ document.getElementById('cp').onclick=e=>{navigator.clipboard.writeText(pa).then(()=>{e.target.textContent='Copied ✓'}).catch(()=>{})};
 }
 </script>
 </body>
