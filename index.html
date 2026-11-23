@@ -515,7 +515,7 @@ function subscribe(){
   for(const id of Store.pending){const cur=Store.items.get(id);if(cur)m.set(id,cur);else m.delete(id)}
   Store.items=m;
   if(!snap.metadata.fromCache){clearTimeout(t);Store.note=''}
-  if(first){first=false;Store.ready=true;render();runPendingDo();setTimeout(rescueAmbleDraft,1500);setTimeout(autoPurge,4000)}else safeRender();
+  if(first){first=false;Store.ready=true;render();runPendingDo();setTimeout(rescueAmbleDraft,1500)}else safeRender();
  },err=>{clearTimeout(t);Store.ready=true;Store.note='Sync stopped. Close and reopen Cherub to reconnect.';render()});
 }
 const isTyping=()=>{const a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)};
@@ -778,8 +778,7 @@ VIEWS.prefs=()=>{
  ${p.theme==='timed'?`<label class="fld half"><span>Day look from</span><input type="time" data-ch="pref" data-k="dayStart" value="${esc(p.dayStart||'06:00')}"></label><label class="fld half"><span>Night look from</span><input type="time" data-ch="pref" data-k="nightStart" value="${esc(p.nightStart||'19:00')}"></label>`:''}
  <label class="fld half"><span>Tomorrow’s sessions reminder at</span><input type="time" data-ch="pref" data-k="preview" value="${esc(p.preview||'21:00')}"></label>
  <label class="fld half"><span>Daily session check-in at</span><input type="time" data-ch="pref" data-k="checkin" value="${esc(p.checkin||'19:00')}"></label></section>
- <section class="card pad"><h3>📋 Assessments</h3><label class="fld half"><span>Automatically delete assessments older than</span><select data-ch="pref" data-k="purgeMonths">${[['0','Never'],['2','2 months'],['3','3 months'],['6','6 months'],['12','1 year']].map(([v,l])=>`<option value="${v}" ${String(p.purgeMonths||0)===v?'selected':''}>${l}</option>`).join('')}</select></label>
- <div class="fld half muted" style="font-weight:500;align-self:end">Deletes them from the cloud and all your devices. You can also delete any single one with its 🗑, or a whole client with Edit → Delete.</div><div class="fld muted" style="font-weight:500">${all('assessment').length} completed assessment${all('assessment').length===1?'':'s'} across ${new Set(all('assessment').map(a=>a.clientId)).size} client${new Set(all('assessment').map(a=>a.clientId)).size===1?'':'s'}.</div>
+ <section class="card pad"><h3>📋 Assessments</h3><div class="fld muted" style="font-weight:500">Assessments are kept until you delete them yourself — with the 🗑 on an assessment, or a whole client with Edit → Delete.</div><div class="fld muted" style="font-weight:500">${all('assessment').length} completed assessment${all('assessment').length===1?'':'s'} across ${new Set(all('assessment').map(a=>a.clientId)).size} client${new Set(all('assessment').map(a=>a.clientId)).size===1?'':'s'}.</div>
  <div class="fld" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="asLib">📋 View all assessments</button><button class="btn" data-act="asFile">📄 Open combined file</button></div></section>
  <section class="card pad"><h3>Notifications</h3><div class="fld muted" style="font-weight:500" id="pushState">${pushStateText()}</div>
  <div class="fld" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="pushOn">Turn on notifications</button><button class="btn" data-act="testPush">Send a test notification</button></div>
@@ -1112,8 +1111,6 @@ function rescueAmbleDraft(){try{const raw=localStorage.getItem(AMB_DRAFT);if(!ra
  const date=a.date||today(),visit=a.visit||'Assessment',id='as_'+c.id+'_'+date+'_'+(visit==='Initial'?'i':'r');if(get(id))return 0;
  put({kind:'assessment',id,clientId:c.id,date,visit,score:{},findings:[],record:a,savedAt:new Date().toISOString(),rescued:true,created:Date.now()},{silent:true});toast('Recovered an unsaved assessment for '+c.name);return 1}catch(e){return 0}}
 function forgetAmbleLocal(c){try{const h=JSON.parse(localStorage.getItem(AMB_HIST)||'{}');delete h[c.name];if(c.cno)delete h[c.cno];localStorage.setItem(AMB_HIST,JSON.stringify(h));localStorage.removeItem(AMB_DRAFT)}catch(e){}}
-function autoPurge(){const m=Number(prefs().purgeMonths)||0;if(!m||Store.mode==='signin')return;const d=new Date();d.setMonth(d.getMonth()-m);const cut=ymd(d);
- const old=all('assessment').filter(a=>(a.date||'')<cut);if(!old.length)return;bulk(old,true).then(()=>toast(`Deleted ${old.length} assessment${old.length===1?'':'s'} older than ${m} months`))}
 function seedAmbleHistory(c,key){try{const h=JSON.parse(localStorage.getItem(AMB_HIST)||'{}');
  h[key]=assessOf(c.id).map(a=>{const sc=a.score||{};return{date:a.date,visit:a.visit||'',total:sc.amble,mob:sc.function_psfs,str:sc.strength,pain:sc.pain,bal:sc.balanceCoordination,raw:sc.raw,answers:a.record||{}}});
  localStorage.setItem(AMB_HIST,JSON.stringify(h));localStorage.removeItem(AMB_DRAFT)}catch(e){}}
